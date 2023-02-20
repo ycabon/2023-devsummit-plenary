@@ -49,9 +49,13 @@
       --calcite-ui-foreground-1: transparent;
     }
 
-    calcite-tile-select,.esri-widget {
-      backdrop-filter: blur(24px);
-      background-color: #FFFFFFAA;
+    calcite-slider {
+      --calcite-ui-foreground-1: white;
+    }
+
+    calcite-tile-select, .esri-widget {
+      backdrop-filter: grayscale(0.5) blur(24px);
+      background-color: #FFFFFFBB;
     }
 
     .esri-widget--button {
@@ -74,7 +78,7 @@
               heading="Distance to roads"
               description="Roads are dangerous for mountain lions, and serve as a proxy for development."
               data-layerId="distanceToRoad">
-              <calcite-slider label-handles="true" min-value="250" max-value="750" min="0" max="1000" scale="l"></calcite-slider>
+              <calcite-slider  id="distanceToRoadSlider" label-handles="true" min-value="250" max-value="750" min="0" max="1000"></calcite-slider>
             </calcite-tile-select>
             <calcite-tile-select
               input-enabled="true"
@@ -99,7 +103,7 @@
               heading="Rugged terrain"
               description="Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
               data-layerId="terrainRugness">
-              <calcite-slider label-handles="true" min-value="50" max-value="200" min="0" max="300" scale="l"></calcite-slider>
+              <calcite-slider id="terrainRugnessSlider" label-handles="true" min-value="50" max-value="200" min="0" max="300"></calcite-slider>
             </calcite-tile-select>
             <calcite-tile-select
               input-enabled="true"
@@ -274,8 +278,11 @@ function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
   });
 }
 
-  let roadThresholds = [250, 750];
-  let rugnessThresholds = [50, 200];
+  const distanceToRoadSlider = document.getElementById("distanceToRoadSlider");
+  const terrainRugnessSlider = document.getElementById("terrainRugnessSlider");
+
+  let roadThresholds = [distanceToRoadSlider.minValue, distanceToRoadSlider.maxValue];
+  let rugnessThresholds = [terrainRugnessSlider.minValue, terrainRugnessSlider.maxValue];
 
   const blendMode = "overla";
   const effect = "drop-shadow(1px, 1px, 1px, #aaa)";
@@ -354,133 +361,21 @@ function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
     layer.visible = true;
   });
 
+  distanceToRoadSlider.addEventListener("calciteSliderChange", () => {
+    roadThresholds = [distanceToRoadSlider.minValue, distanceToRoadSlider.maxValue];
+    console.log(roadThresholds);
+    distanceToRoadLayer.rasterFunction = createColormapFunction(createRoadFunction(roadThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2]));
+    habitatAnalysisLayer.rasterFunction = createColormapFunction(createHabitatAnalysisFunction(roadThresholds, rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3]));
+  });
+  
+  terrainRugnessSlider.addEventListener("calciteSliderChange", () => {
+    rugnessThresholds = [terrainRugnessSlider.minValue, terrainRugnessSlider.maxValue];
+    console.log(rugnessThresholds);
+    terrainRugnessLayer.rasterFunction = createColormapFunction(createTerrainRuggednessFunction(rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2]));
+    habitatAnalysisLayer.rasterFunction = createColormapFunction(createHabitatAnalysisFunction(roadThresholds, rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3]));
+  });
+
   view.ui.add("controls", "manual");
-
-  // const bandsSelectInfos = [
-    //  {
-    //   heading: "Distance to roads",
-    //   description: "Roads are dangerous for mountain lions, and serve as a proxy for development.",
-    //   icon: "rangefinder",
-    //   "changeDisplayDefault": () => {
-    //     layer.renderer = colorMapRenderer.clone();
-    //     const rasterFunction = createRasterFunction(remapRoadDistance, suitabilityColorMap);
-    //     layer.rasterFunction = rasterFunction;
-    //   },
-    //   sliderMinValue: 250,
-    //   sliderMaxValue: 750,
-    //   sliderMin: 0,
-    //   sliderMax: 1000,
-    //   "elementEvent": (event) => {
-    //     roadThresholds = [event.target.minValue, event.target.maxValue];
-    //     remapRoadDistance.functionArguments.inputRanges = [0, roadThresholds[0], roadThresholds[0], roadThresholds[1], roadThresholds[1], 1000000];
-    //     const rasterFunction = createRasterFunction(remapRoadDistance, suitabilityColorMap);
-    //     layer.rasterFunction = rasterFunction;
-    //   }
-    //  },
-  //   {
-  //     heading: "Protected status",
-  //     description: "Protected status refers to state parks, national forests, etc. tend to be minimally developed.",
-  //     icon: "rangefinder",
-  //     "changeDisplayDefault": () => {
-  //       layer.renderer = colorMapRenderer.clone();
-  //       const rasterFunction = createRasterFunction(remapProtectedStatus, suitabilityColorMap);
-  //       layer.rasterFunction = rasterFunction;
-  //     }
-  //   },
-  //   {
-  //     heading: "Land cover",
-  //     description: "Landcover helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals.",
-  //     icon: "rangefinder",
-  //     "changeDisplayDefault": () => {
-  //       const landCover = new RasterFunction({
-  //         functionName: "ExtractBand",
-  //         outputPixelType: "u8",
-  //         functionArguments: { bandIds: [2] }
-  //       });
-  //       layer.rasterFunction = landCover;
-  //       layer.renderer = landCoverRenderer;
-  //     },
-  //     buttonName: "Suitability remap",
-  //     "elementEvent": (event) => {
-  //       layer.renderer = colorMapRenderer.clone();
-  //       const rasterFunction = createRasterFunction(remapLandCover, suitabilityColorMap);
-  //       layer.rasterFunction = rasterFunction;
-  //     }
-  //   },
-  //   {
-  //     heading: "Rugged terrain",
-  //     description: "Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals.",
-  //     icon: "rangefinder",
-  //     "changeDisplayDefault": () => {
-  //       layer.renderer = colorMapRenderer.clone();
-  //       const rasterFunction = createRasterFunction(remapTerrainRuggedness, suitabilityColorMap);
-  //       layer.rasterFunction = rasterFunction;
-  //     },
-  //     sliderMinValue: rugThresholds[0],
-  //     sliderMaxValue: rugThresholds[1],
-  //     sliderMin: 0,
-  //     sliderMax: 300,
-  //     "elementEvent": (event) => {
-  //       layer.renderer = colorMapRenderer.clone();
-  //       rugThresholds = [event.target.minValue, event.target.maxValue];
-  //       remapTerrainRuggedness.functionArguments.inputRanges = [0, rugThresholds[0], rugThresholds[0], rugThresholds[1], rugThresholds[1], 300];
-  //       const rasterFunction = createRasterFunction(remapTerrainRuggedness, suitabilityColorMap);
-  //       layer.rasterFunction = rasterFunction;
-  //     }
-  //   }
-  // ];
-
-  // const tileSelectGroup = document.getElementById("bandTileSelectGroup");
-  // bandsSelectInfos.forEach((band) =>{
-  //   const testFunc = band["changeDisplayDefault"];
-  //   const tileSelect = document.createElement("calcite-tile-select");
-  //   tileSelect.addEventListener("calciteTileSelectChange", testFunc);
-  //   tileSelect.setAttribute("input-alignment", "end");
-  //   tileSelect.setAttribute("icon", band.icon);
-  //   tileSelect.setAttribute("heading", band.heading);
-  //   tileSelect.setAttribute("description", band.description);
-  //   tileSelect.setAttribute("input-enabled", true);
-
-  //   if (band.sliderMinValue){
-  //     const slider = document.createElement("calcite-slider");
-  //     slider.setAttribute("min-value", band.sliderMinValue);
-  //     slider.setAttribute("max-value", band.sliderMaxValue);
-  //     slider.setAttribute("min", band.sliderMin);
-  //     slider.setAttribute("max", band.sliderMax);
-  //     slider.setAttribute("label-handles", true);
-  //     const elementEvent = band["elementEvent"];
-  //     tileSelect.addEventListener("calciteSliderChange", elementEvent);
-
-  //     tileSelect.appendChild(slider);
-  //     if (band.heading == "Distance to roads"){
-  //       tileSelect.setAttribute("checked", true);
-  //     }
-  //   } else if (band.buttonName){
-  //     const button = document.createElement("calcite-chip");
-  //     button.setAttribute("value", band.buttonName);
-  //     button.setAttribute("kind", "inverse");
-  //     button.setAttribute("appearance", "outline-fill");
-  //     button.innerHTML =  band.buttonName;
-  //     button.classList.add("chipSpacing");
-
-  //     const elementEvent = band["elementEvent"];
-  //     button.addEventListener("click", elementEvent);
-  //     tileSelect.appendChild(document.createElement("br"));
-  //     tileSelect.appendChild(document.createElement("br"));
-  //     tileSelect.appendChild(button);
-  //   }
-  //   bandTileSelectGroup.appendChild(tileSelect);
-  // });
-
-  // const imageryLayer = new ImageryLayer({
-  //     portalItem: {
-  //       id: "8504300ae6524e3d9745a98995965fda"
-  //     },
-  //     format: "lerc"
-  //   });
-  // imageryLayer.load().then(()=>{
-  //   landCoverRenderer = imageryLayer.renderer.clone();
-  // });
 
 })());
 </script>
