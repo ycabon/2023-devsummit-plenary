@@ -5,8 +5,8 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Client side raster function support</title>
 
-  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.5/calcite.css" />
-  <script type="module" src="https://js.arcgis.com/calcite-components/1.0.5/calcite.esm.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.7/calcite.css" />
+  <script type="module" src="https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js"></script>
 
   <link rel="stylesheet" href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"/>
   <script>esriConfig = { has: { "mapview-transitions-duration": 500 } }</script>
@@ -41,16 +41,31 @@
       flex-direction: row;
       justify-content: center;
       padding: 24px;
+      width: 100%;
+      bottom: 0;
+    }
+
+    .calcite-mode-light {
+      --calcite-ui-foreground-1: transparent;
+    }
+
+    calcite-tile-select,.esri-widget {
+      backdrop-filter: blur(24px);
+      background-color: #FFFFFFAA;
+    }
+
+    .esri-widget--button {
+      background-color: transparent;
     }
   </style>
   </head>
 
 <body >
   <calcite-shell>
-    <calcite-panel heading="TODO DEMO TITLE">
+    <calcite-panel heading="Mountain Lion Habitat Analysis">
       <div class="content">
         <div id="viewDiv"></div>
-        <div class="controls">
+        <div id="controls" class="controls">
           <calcite-tile-select-group id="bandTileSelectGroup" layout="horizontal">
             <calcite-tile-select
               input-enabled="true"
@@ -59,6 +74,7 @@
               heading="Distance to roads"
               description="Roads are dangerous for mountain lions, and serve as a proxy for development."
               data-layerId="distanceToRoad">
+              <calcite-slider label-handles="true" min-value="250" max-value="750" min="0" max="1000" scale="l"></calcite-slider>
             </calcite-tile-select>
             <calcite-tile-select
               input-enabled="true"
@@ -83,6 +99,7 @@
               heading="Rugged terrain"
               description="Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
               data-layerId="terrainRugness">
+              <calcite-slider label-handles="true" min-value="50" max-value="200" min="0" max="300" scale="l"></calcite-slider>
             </calcite-tile-select>
             <calcite-tile-select
               input-enabled="true"
@@ -141,14 +158,6 @@ require([
   const ramp = colorRamps.byName("Red and Green 9");
   // const SUITABILITY_COLORMAP = [[1, 56, 168, 0, 255], [2, 141, 212, 0, 255], [3, 222, 49, 99, 255], [4, 222, 49, 99, 0], [7, 222, 49, 99, 0]];
   const SUITABILITY_COLORMAP = generateColormapRamp([1, 2, 3, 4, 5, 6, 7], ramp);
-  // SUITABILITY_COLORMAP[0][4] = 255;
-  // SUITABILITY_COLORMAP[1][4] = 255;
-  // SUITABILITY_COLORMAP[2][4] = 255;
-  // SUITABILITY_COLORMAP[3][4] = 0;
-  // SUITABILITY_COLORMAP[4][4] = 0;
-  // SUITABILITY_COLORMAP[5][4] = 0;
-  // SUITABILITY_COLORMAP[6][4] = 0;
-  console.log(SUITABILITY_COLORMAP);
 
 function createColormapFunction(raster, colormap){
   return new RasterFunction({
@@ -345,6 +354,8 @@ function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
     layer.visible = true;
   });
 
+  view.ui.add("controls", "manual");
+
   // const bandsSelectInfos = [
     //  {
     //   heading: "Distance to roads",
@@ -459,22 +470,6 @@ function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
   //     tileSelect.appendChild(button);
   //   }
   //   bandTileSelectGroup.appendChild(tileSelect);
-  // });
-
-  // let colorMapRenderer;
-  // view.whenLayerView(layer).then(()=>{
-  //   view.goTo(layer.fullExtent);
-  //   colorMapRenderer = layer.renderer.clone();
-  // // });
-
-  // view.on("click", (event) => {
-  // console.log("renderer", layer.renderer);
-  //   layer.identify(
-  //     event.mapPoint
-  //   ).then((results) => {
-  //     console.log(results.processedValue)
-  //   });
-  //   console.log(layer);
   // });
 
   // const imageryLayer = new ImageryLayer({
