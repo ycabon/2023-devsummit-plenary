@@ -1,389 +1,681 @@
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>Client side raster function support</title>
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Client side raster function support</title>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.7/calcite.css"
+    />
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js"
+    ></script>
 
-  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.7/calcite.css" />
-  <script type="module" src="https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script>
+      esriConfig = { has: { "mapview-transitions-duration": 500 } };
+    </script>
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
 
-  <link rel="stylesheet" href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"/>
-  <script>esriConfig = { has: { "mapview-transitions-duration": 500 } }</script>
-  <script src="https://jsdev.arcgis.com/4.26/"></script>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
 
-  <style>
-    html,
-    body {
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
-    }
+      .content {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
 
-    .content {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
 
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
-    }
+      #viewDiv {
+        flex-grow: 1;
+      }
 
-    #viewDiv {
-      flex-grow: 1;
-    }
+      .controls {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        padding: 24px;
+        width: 100%;
+        bottom: 0;
+      }
 
-    .controls {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      padding: 24px;
-      width: 100%;
-      bottom: 0;
-    }
+      .calcite-mode-light {
+        --calcite-ui-foreground-1: transparent;
+      }
 
-    .calcite-mode-light {
-      --calcite-ui-foreground-1: transparent;
-    }
+      calcite-slider {
+        --calcite-ui-foreground-1: white;
+      }
 
-    calcite-slider {
-      --calcite-ui-foreground-1: white;
-    }
+      calcite-tile-select,
+      .esri-widget {
+        backdrop-filter: grayscale(0.5) blur(24px);
+        background-color: #ffffffbb;
+      }
 
-    calcite-tile-select, .esri-widget {
-      backdrop-filter: grayscale(0.5) blur(24px);
-      background-color: #FFFFFFBB;
-    }
+      .esri-widget--button {
+        background-color: transparent;
+      }
 
-    .esri-widget--button {
-      background-color: transparent;
-    }
-  </style>
+      /**
+        * Hover tooltip
+        */
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        transition: opacity 200ms;
+      }
+
+      .tooltip > div {
+        margin: 0 auto;
+        padding: 12px;
+        border-radius: 4px;
+        box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.75);
+        transform: translate3d(-50%, -125%, 0);
+        backdrop-filter: blur(24px);
+        background-color: #ffffffaa;
+      }
+    </style>
   </head>
 
-<body >
-  <calcite-shell>
-    <calcite-panel heading="Mountain Lion Habitat Analysis">
-      <div class="content">
-        <div id="viewDiv"></div>
-        <div id="controls" class="controls">
-          <calcite-tile-select-group id="bandTileSelectGroup" layout="horizontal">
-            <calcite-tile-select
-              input-enabled="true"
-              input-alignment="end"
-              icon="maximum-territory-distance"
-              heading="Distance to roads"
-              description="Roads are dangerous for mountain lions, and serve as a proxy for development."
-              data-layerId="distanceToRoad">
-              <calcite-slider  id="distanceToRoadSlider" label-handles="true" min-value="250" max-value="750" min="0" max="1000"></calcite-slider>
-            </calcite-tile-select>
-            <calcite-tile-select
-              input-enabled="true"
-              input-alignment="end"
-              icon="security"
-              heading="Protected status"
-              description="Protected status refers to state parks, national forests, etc. tend to be minimally developed."
-              data-layerId="protectedStatus">
-            </calcite-tile-select>
-            <calcite-tile-select
-              input-enabled="true"
-              input-alignment="end"
-              icon="urban-model"
-              heading="Land cover"
-              description="Landcover helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
-              data-layerId="landCover">
-            </calcite-tile-select>
-            <calcite-tile-select
-              input-enabled="true"
-              input-alignment="end"
-              icon="altitude"
-              heading="Rugged terrain"
-              description="Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
-              data-layerId="terrainRugness">
-              <calcite-slider id="terrainRugnessSlider" label-handles="true" min-value="50" max-value="200" min="0" max="300"></calcite-slider>
-            </calcite-tile-select>
-            <calcite-tile-select
-              input-enabled="true"
-              input-alignment="end"
-              icon="analysis"
-              heading="Results"
-              description="TODO"
-              data-layerId="habitatAnalysis"
-              style="margin-left: 20px",
-              checked>
-            </calcite-tile-select>
-          </calcite-tile-select-group>
+  <body>
+    <calcite-shell>
+      <calcite-panel heading="Mountain Lion Habitat Analysis">
+        <div class="content">
+          <div id="viewDiv"></div>
+          <div id="controls" class="controls">
+            <calcite-tile-select-group
+              id="bandTileSelectGroup"
+              layout="horizontal"
+            >
+              <calcite-tile-select
+                input-enabled="true"
+                input-alignment="end"
+                icon="maximum-territory-distance"
+                heading="Distance to roads"
+                description="Roads are dangerous for mountain lions, and serve as a proxy for development."
+                data-layerId="distanceToRoad"
+              >
+                <calcite-slider
+                  id="distanceToRoadSlider"
+                  label-handles="true"
+                  min-value="250"
+                  max-value="750"
+                  min="0"
+                  max="1000"
+                ></calcite-slider>
+              </calcite-tile-select>
+              <calcite-tile-select
+                input-enabled="true"
+                input-alignment="end"
+                icon="security"
+                heading="Protected status"
+                description="Protected status refers to state parks, national forests, etc. tend to be minimally developed."
+                data-layerId="protectedStatus"
+              >
+              </calcite-tile-select>
+              <calcite-tile-select
+                input-enabled="true"
+                input-alignment="end"
+                icon="urban-model"
+                heading="Land cover"
+                description="Landcover helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
+                data-layerId="landCover"
+              >
+              </calcite-tile-select>
+              <calcite-tile-select
+                input-enabled="true"
+                input-alignment="end"
+                icon="altitude"
+                heading="Rugged terrain"
+                description="Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
+                data-layerId="terrainRugness"
+              >
+                <calcite-slider
+                  id="terrainRugnessSlider"
+                  label-handles="true"
+                  min-value="50"
+                  max-value="200"
+                  min="0"
+                  max="300"
+                ></calcite-slider>
+              </calcite-tile-select>
+              <calcite-tile-select
+                input-enabled="true"
+                input-alignment="end"
+                icon="analysis"
+                heading="Results"
+                description="TODO"
+                data-layerId="habitatAnalysis"
+                style="margin-left: 20px"
+                ,
+                checked
+              >
+              </calcite-tile-select>
+            </calcite-tile-select-group>
+          </div>
         </div>
-      </div>
-    </calcite-panel>
-  </calcite-shell>
-  </div>
-</body>
+      </calcite-panel>
+    </calcite-shell>
+  </body>
 
-<script>
-require([
-  "esri/Map",
-  "esri/views/MapView",
-  "esri/layers/GroupLayer",
-  "esri/layers/ImageryTileLayer",
-  "esri/layers/ImageryLayer",
-  "esri/layers/support/RasterFunction",
-  "esri/layers/support/rasterFunctionConstants",
-  "esri/renderers/RasterColormapRenderer",
-  "esri/smartMapping/symbology/support/colorRamps"
-], (
-  Map,
-  MapView,
-  GroupLayer, ImageryTileLayer, ImageryLayer,
-  RasterFunction, rasterFunctionConstants,
-  RasterColormapRenderer,
-  colorRamps
-) => (async () => {
-  const ROAD_BAND_ID = 0;
-  const PROTECTED_STATUS_BAND_ID = 1;
-  const LAND_COVER_BAND_ID = 2;
-  const TERRAIN_RUGNESS_BAND_ID = 3;
-  
-  function generateColormapRamp(pixelValues, colorRamp) {
-    let { colors } = colorRamp.colorsForClassBreaks.find((ramp) => {
-      return ramp.numClasses === pixelValues.length
-    });
-    
-    colors = colors.slice().reverse();
+  <script>
+    require([
+      "esri/core/reactiveUtils",
+      "esri/core/promiseUtils",
+      "esri/intl",
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GroupLayer",
+      "esri/layers/ImageryTileLayer",
+      "esri/layers/ImageryLayer",
+      "esri/layers/support/RasterFunction",
+      "esri/layers/support/rasterFunctionConstants",
+      "esri/renderers/RasterColormapRenderer",
+      "esri/smartMapping/symbology/support/colorRamps",
+    ], (
+      reactiveUtils,
+      promiseUtils,
+      intl,
+      Map,
+      MapView,
+      GroupLayer,
+      ImageryTileLayer,
+      ImageryLayer,
+      RasterFunction,
+      rasterFunctionConstants,
+      RasterColormapRenderer,
+      colorRamps
+    ) =>
+      (async () => {
+        const ROAD_BAND_ID = 0;
+        const PROTECTED_STATUS_BAND_ID = 1;
+        const LAND_COVER_BAND_ID = 2;
+        const TERRAIN_RUGNESS_BAND_ID = 3;
 
-    return pixelValues.map((value, index) => {
-      const { r, g, b } = colors[index];
-      return [value, r, g, b];
-    })
-  }
-  
-  const ramp = colorRamps.byName("Red and Green 9");
-  // const SUITABILITY_COLORMAP = [[1, 56, 168, 0, 255], [2, 141, 212, 0, 255], [3, 222, 49, 99, 255], [4, 222, 49, 99, 0], [7, 222, 49, 99, 0]];
-  const SUITABILITY_COLORMAP = generateColormapRamp([1, 2, 3, 4, 5, 6, 7], ramp);
+        function generateColormapRamp(pixelValues, colorRamp) {
+          let { colors } = colorRamp.colorsForClassBreaks.find((ramp) => {
+            return ramp.numClasses === pixelValues.length;
+          });
 
-function createColormapFunction(raster, colormap){
-  return new RasterFunction({
-    functionName: "Colormap",
-    functionArguments: {
-      colormap: colormap,
-      raster: raster
-    },
-    outputPixelType: "U8"
-  });
-}
+          colors = colors.slice().reverse();
 
-function enablePixelValuesFromColormap(colormap, enabled){
-  return colormap.filter((color) => enabled.includes(color[0]));
-}
+          return pixelValues.map((value, index) => {
+            const { r, g, b } = colors[index];
+            return [value, r, g, b];
+          });
+        }
 
-function createWeigthedFunction(raster, weight) {
-  return new RasterFunction({
-    functionName: "Local",
-    functionArguments: {
-      operation: rasterFunctionConstants.localArithmeticOperation.times,
-      rasters: [raster, weight]
-    },
-    outputPixelType: "F32"
-  });
-}
+        const ramp = colorRamps.byName("Red and Green 9");
+        // const SUITABILITY_COLORMAP = [[1, 56, 168, 0, 255], [2, 141, 212, 0, 255], [3, 222, 49, 99, 255], [4, 222, 49, 99, 0], [7, 222, 49, 99, 0]];
+        const SUITABILITY_COLORMAP = generateColormapRamp(
+          [1, 2, 3, 4, 5, 6, 7],
+          ramp
+        );
 
-function createRoadFunction(roadThresholds) {
-  // remap pixel values are 1, 2 and 3
-  // 3 is not suitable
-  return new RasterFunction({
-    functionName: "Remap",
-    functionArguments: {
-      // input range 0-250 (0 included, 250 not included) remap to 3 so on so forth
-      // 1 is most suitable while 3 is least suitable
-      inputRanges: [0, roadThresholds[0], roadThresholds[0], roadThresholds[1], roadThresholds[1], 1000000],
-      outputValues: [3, 2, 1], // 3 - least suitable
-      raster: new RasterFunction({
-        functionName: "ExtractBand",
-        functionArguments: { bandIds: [ROAD_BAND_ID] }
-      })
-    },
-    outputPixelType: "U8"
-  })
-}
+        function createColormapFunction(raster, colormap) {
+          return new RasterFunction({
+            functionName: "Colormap",
+            functionArguments: {
+              colormap: colormap,
+              raster: raster,
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-function createProtectedFunction() {
-  return new RasterFunction({
-    functionName: "Remap",
-    functionArguments: {
-      inputRanges: [9, 10], // outlier values - higher the value not suitable
-      outputValues: [4],    // make them 4
-      allowUnmatched: true, // allow 1,2,3 to come through the remap
-      raster: new RasterFunction({
-        functionName: "ExtractBand",
-        functionArguments: { bandIds: [PROTECTED_STATUS_BAND_ID] }
-      }),
-    },
-    outputPixelType: "U8"
-  });
-}
+        function enablePixelValuesFromColormap(colormap, enabled) {
+          return colormap.filter((color) => enabled.includes(color[0]));
+        }
 
-function createLandCoverFunction() {
-  return new RasterFunction({
-    functionName: "Remap",
-    functionArguments: {
-      // input range 0-30 (0 included, 30 not included) remap to 7 so on so forth
-      // 1 is most suitable while 7 is least suitable
+        function createWeigthedFunction(raster, weight) {
+          return new RasterFunction({
+            functionName: "Local",
+            functionArguments: {
+              operation: rasterFunctionConstants.localArithmeticOperation.times,
+              rasters: [raster, weight],
+            },
+            outputPixelType: "F32",
+          });
+        }
 
-      // cpu processing is called if more than 6 ranges
-      inputRanges: [0, 30, 31, 32, 32, 40, 41, 42, 42, 43, 43, 44, 44, 51, 52, 53, 53, 70, 71, 72, 72, 74, 75, 76, 76, 80, 81, 82, 82, 83, 83, 200],
-      outputValues: [7, 2, 7, 1, 1, 1, 7, 1, 7, 2, 7, 2, 7, 2, 2, 7],
-      raster: new RasterFunction({
-        functionName: "ExtractBand",
-        functionArguments: { bandIds: [LAND_COVER_BAND_ID] }
-      }),
-    },
-    outputPixelType: "U8"
-  });
-}
+        function createRoadFunction(roadThresholds) {
+          // remap pixel values are 1, 2 and 3
+          // 3 is not suitable
+          return new RasterFunction({
+            functionName: "Remap",
+            functionArguments: {
+              // input range 0-250 (0 included, 250 not included) remap to 3 so on so forth
+              // 1 is most suitable while 3 is least suitable
+              inputRanges: [
+                0,
+                roadThresholds[0],
+                roadThresholds[0],
+                roadThresholds[1],
+                roadThresholds[1],
+                1000000,
+              ],
+              outputValues: [3, 2, 1], // 3 - least suitable
+              raster: new RasterFunction({
+                functionName: "ExtractBand",
+                functionArguments: { bandIds: [ROAD_BAND_ID] },
+              }),
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-function createTerrainRuggednessFunction(rugnessThresholds) {
-  // terrain ruggedness remap
-  return new RasterFunction({
-    functionName: "Remap",
-    functionArguments: {
-      inputRanges: [0, rugnessThresholds[0], rugnessThresholds[0], rugnessThresholds[1], rugnessThresholds[1], 300],
-      outputValues: [3, 2, 1],
-      raster: new RasterFunction({
-        functionName: "ExtractBand",
-        functionArguments: { bandIds: [TERRAIN_RUGNESS_BAND_ID] }
-      }),
-    },
-    outputPixelType: "U8"
-  })
-}
+        function createProtectedFunction() {
+          return new RasterFunction({
+            functionName: "Remap",
+            functionArguments: {
+              inputRanges: [9, 10], // outlier values - higher the value not suitable
+              outputValues: [4], // make them 4
+              allowUnmatched: true, // allow 1,2,3 to come through the remap
+              raster: new RasterFunction({
+                functionName: "ExtractBand",
+                functionArguments: { bandIds: [PROTECTED_STATUS_BAND_ID] },
+              }),
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
-  const rasters = [
-    createWeigthedFunction(createRoadFunction(roadThresholds), 0.2),
-    createWeigthedFunction(createProtectedFunction(), 0.25),
-    createWeigthedFunction(createTerrainRuggednessFunction(rugnessThresholds), 0.25),
-    createWeigthedFunction(createLandCoverFunction(), 0.3),
-    0.25
-  ];
-  
-  return new RasterFunction({
-    functionName: "Local",
-    functionArguments: {
-      operation: rasterFunctionConstants.cellStatisticalOperation.sum,
-      rasters
-    },
-    outputPixelType: "U8"
-  });
-}
+        function createLandCoverFunction() {
+          return new RasterFunction({
+            functionName: "Remap",
+            functionArguments: {
+              // input range 0-30 (0 included, 30 not included) remap to 7 so on so forth
+              // 1 is most suitable while 7 is least suitable
 
-  const distanceToRoadSlider = document.getElementById("distanceToRoadSlider");
-  const terrainRugnessSlider = document.getElementById("terrainRugnessSlider");
+              // cpu processing is called if more than 6 ranges
+              inputRanges: [
+                0, 30, 31, 32, 32, 40, 41, 42, 42, 43, 43, 44, 44, 51, 52, 53,
+                53, 70, 71, 72, 72, 74, 75, 76, 76, 80, 81, 82, 82, 83, 83, 200,
+              ],
+              outputValues: [7, 2, 7, 1, 1, 1, 7, 1, 7, 2, 7, 2, 7, 2, 2, 7],
+              raster: new RasterFunction({
+                functionName: "ExtractBand",
+                functionArguments: { bandIds: [LAND_COVER_BAND_ID] },
+              }),
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-  let roadThresholds = [distanceToRoadSlider.minValue, distanceToRoadSlider.maxValue];
-  let rugnessThresholds = [terrainRugnessSlider.minValue, terrainRugnessSlider.maxValue];
+        function createTerrainRuggednessFunction(rugnessThresholds) {
+          // terrain ruggedness remap
+          return new RasterFunction({
+            functionName: "Remap",
+            functionArguments: {
+              inputRanges: [
+                0,
+                rugnessThresholds[0],
+                rugnessThresholds[0],
+                rugnessThresholds[1],
+                rugnessThresholds[1],
+                300,
+              ],
+              outputValues: [3, 2, 1],
+              raster: new RasterFunction({
+                functionName: "ExtractBand",
+                functionArguments: { bandIds: [TERRAIN_RUGNESS_BAND_ID] },
+              }),
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-  const blendMode = "overla";
-  const effect = "drop-shadow(1px, 1px, 1px, #aaa)";
+        function createHabitatAnalysisFunction(
+          roadThresholds,
+          rugnessThresholds
+        ) {
+          const rasters = [
+            createWeigthedFunction(createRoadFunction(roadThresholds), 0.2),
+            createWeigthedFunction(createProtectedFunction(), 0.25),
+            createWeigthedFunction(
+              createTerrainRuggednessFunction(rugnessThresholds),
+              0.25
+            ),
+            createWeigthedFunction(createLandCoverFunction(), 0.3),
+            0.25,
+          ];
 
-  const distanceToRoadLayer = new ImageryTileLayer({
-    id: "distanceToRoad",
-    url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
-    rasterFunction: createColormapFunction(createRoadFunction(roadThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])),
-    visible: false
-  });
+          return new RasterFunction({
+            functionName: "Local",
+            functionArguments: {
+              operation: rasterFunctionConstants.cellStatisticalOperation.sum,
+              rasters,
+            },
+            outputPixelType: "U8",
+          });
+        }
 
-  const protectedStatusLayer = new ImageryTileLayer({
-    id: "protectedStatus",
-    url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
-    rasterFunction: createColormapFunction(createProtectedFunction(), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])),
-    visible: false
-  });
+        const distanceToRoadSlider = document.getElementById(
+          "distanceToRoadSlider"
+        );
+        const terrainRugnessSlider = document.getElementById(
+          "terrainRugnessSlider"
+        );
 
-  const landCoverLayer = new ImageryTileLayer({
-    id: "landCover",
-    url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
-    rasterFunction: createColormapFunction(createLandCoverFunction(), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])),
-    visible: false
-  });
+        let roadThresholds = [
+          distanceToRoadSlider.minValue,
+          distanceToRoadSlider.maxValue,
+        ];
+        let rugnessThresholds = [
+          terrainRugnessSlider.minValue,
+          terrainRugnessSlider.maxValue,
+        ];
 
-  const terrainRugnessLayer = new ImageryTileLayer({
-    id: "terrainRugness",
-    url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
-    rasterFunction: createColormapFunction(createTerrainRuggednessFunction(rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])),
-    visible: false
-  });
-  
-  habitatAnalysisLayer = new ImageryTileLayer({
-    id: "habitatAnalysis",
-    url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
-    rasterFunction: createColormapFunction(createHabitatAnalysisFunction(roadThresholds, rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])),
-    visible: true
-  });
+        const blendMode = "overla";
+        const effect = "drop-shadow(1px, 1px, 1px, #aaa)";
 
-  const group = new GroupLayer({
-    visibilityMode: "exclusive",
-    blendMode: "multiply",
-    effect,
-    layers: [
-      distanceToRoadLayer,
-      protectedStatusLayer,
-      landCoverLayer,
-      terrainRugnessLayer,
-      habitatAnalysisLayer
-    ]
-  });
+        const distanceToRoadLayer = new ImageryTileLayer({
+          id: "distanceToRoad",
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
+          rasterFunction: createColormapFunction(
+            createRoadFunction(roadThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
+          ),
+          visible: false,
+        });
 
-  const map = new Map({
-    basemap: "topo-vector", // { portalItem: { id: "2e8a3ccdfd6d42a995b79812b3b0ebc6" }},
-    layers: [group]
-  });
+        const protectedStatusLayer = new ImageryTileLayer({
+          id: "protectedStatus",
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
+          rasterFunction: createColormapFunction(
+            createProtectedFunction(),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
+          ),
+          visible: false,
+        });
 
-  map.basemap.loadAll().then(() => {
-    map.basemap.baseLayers.forEach((layer) => {
-      layer.effect = "grayscale(1) opacity(0.5)"
-    })
-  })
+        const landCoverLayer = new ImageryTileLayer({
+          id: "landCover",
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
+          rasterFunction: createColormapFunction(
+            createLandCoverFunction(),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+          ),
+          visible: false,
+        });
 
-  view = new MapView({
-    container: "viewDiv",
-    map: map,
-    center: [-118.6, 34.33],
-    zoom: 11,
-    constraints: {
-      snapToZoom: false
-    }
-  });
+        const terrainRugnessLayer = new ImageryTileLayer({
+          id: "terrainRugness",
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
+          rasterFunction: createColormapFunction(
+            createTerrainRuggednessFunction(rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
+          ),
+          visible: false,
+        });
 
-  const bandTileSelectGroup = document.getElementById("bandTileSelectGroup");
-  bandTileSelectGroup.addEventListener("calciteTileSelectChange", (event) => {
-    const calciteTileSelect = event.target;
-    const layerId = calciteTileSelect.getAttribute("data-layerId");
-    const layer = map.findLayerById(layerId);
-    layer.visible = true;
-  });
+        habitatAnalysisLayer = new ImageryTileLayer({
+          id: "habitatAnalysis",
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Mountain_lion_habitat_analysis/ImageServer",
+          rasterFunction: createColormapFunction(
+            createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+          ),
+          visible: true,
+        });
 
-  distanceToRoadSlider.addEventListener("calciteSliderChange", () => {
-    roadThresholds = [distanceToRoadSlider.minValue, distanceToRoadSlider.maxValue];
-    console.log(roadThresholds);
-    distanceToRoadLayer.rasterFunction = createColormapFunction(createRoadFunction(roadThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2]));
-    habitatAnalysisLayer.rasterFunction = createColormapFunction(createHabitatAnalysisFunction(roadThresholds, rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3]));
-  });
-  
-  terrainRugnessSlider.addEventListener("calciteSliderChange", () => {
-    rugnessThresholds = [terrainRugnessSlider.minValue, terrainRugnessSlider.maxValue];
-    console.log(rugnessThresholds);
-    terrainRugnessLayer.rasterFunction = createColormapFunction(createTerrainRuggednessFunction(rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2]));
-    habitatAnalysisLayer.rasterFunction = createColormapFunction(createHabitatAnalysisFunction(roadThresholds, rugnessThresholds), enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3]));
-  });
+        const group = new GroupLayer({
+          visibilityMode: "exclusive",
+          blendMode: "multiply",
+          effect,
+          layers: [
+            distanceToRoadLayer,
+            protectedStatusLayer,
+            landCoverLayer,
+            terrainRugnessLayer,
+            habitatAnalysisLayer,
+          ],
+        });
 
-  view.ui.add("controls", "manual");
+        const map = new Map({
+          basemap: "topo-vector", // { portalItem: { id: "2e8a3ccdfd6d42a995b79812b3b0ebc6" }},
+          layers: [group],
+        });
 
-})());
-</script>
+        map.basemap.loadAll().then(() => {
+          map.basemap.baseLayers.forEach((layer) => {
+            layer.effect = "grayscale(1) opacity(0.5)";
+          });
+        });
 
+        view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-118.6, 34.33],
+          zoom: 11,
+          constraints: {
+            snapToZoom: false,
+          },
+        });
+
+        const bandTileSelectGroup = document.getElementById(
+          "bandTileSelectGroup"
+        );
+        bandTileSelectGroup.addEventListener(
+          "calciteTileSelectChange",
+          (event) => {
+            const calciteTileSelect = event.target;
+            const layerId = calciteTileSelect.getAttribute("data-layerId");
+            const layer = map.findLayerById(layerId);
+            layer.visible = true;
+          }
+        );
+
+        distanceToRoadSlider.addEventListener("calciteSliderChange", () => {
+          roadThresholds = [
+            distanceToRoadSlider.minValue,
+            distanceToRoadSlider.maxValue,
+          ];
+          console.log(roadThresholds);
+          distanceToRoadLayer.rasterFunction = createColormapFunction(
+            createRoadFunction(roadThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
+          );
+          habitatAnalysisLayer.rasterFunction = createColormapFunction(
+            createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+          );
+        });
+
+        terrainRugnessSlider.addEventListener("calciteSliderChange", () => {
+          rugnessThresholds = [
+            terrainRugnessSlider.minValue,
+            terrainRugnessSlider.maxValue,
+          ];
+          console.log(rugnessThresholds);
+          terrainRugnessLayer.rasterFunction = createColormapFunction(
+            createTerrainRuggednessFunction(rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
+          );
+          habitatAnalysisLayer.rasterFunction = createColormapFunction(
+            createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+          );
+        });
+
+        const updateToolip = promiseUtils.debounce(async (event) => {
+          const results = await layer.identify(view.toMap(event));
+          console.log(results);
+        });
+
+        view.ui.add("controls", "manual");
+
+        view
+          .whenLayerView(habitatAnalysisLayer)
+          .then((layerView) => setupHoverTooltip(layerView));
+
+        function setupHoverTooltip(layerView) {
+          const tooltip = createTooltip();
+
+          const hitTest = promiseUtils.debounce(async (event) => {
+            const screenPoint = { x: event.x, y: event.y };
+            const point = view.toMap(screenPoint);
+            const results = await layerView.layer.identify(point);
+
+            if (!results.value) {
+              return {
+                screenPoint,
+                data: null
+              }
+            }
+
+            return {
+              data: {
+                roadDistance: results.value[0],
+                protectedStatus: results.value[1],
+                landCover: results.value[2],
+                terrainRuggedness: results.value[3],
+                score: results.processedValue,
+              },
+              screenPoint,
+            };
+          });
+
+          const landCoverClasses = [
+            { value: 11, className: "Open Water" },
+            { value: 12, className: "Perennial Snow/Ice" },
+            { value: 21, className: "Developed, Open Space" },
+            { value: 22, className: "Developed, Low Intensity" },
+            { value: 23, className: "Developed, Medium Intensity" },
+            { value: 24, className: "Developed, High Intensity" },
+            { value: 31, className: "Barren Land" },
+            { value: 41, className: "Deciduous Forest" },
+            { value: 42, className: "Evergreen Forest" },
+            { value: 43, className: "Mixed Forest" },
+            { value: 52, className: "Shrub/Scrub" },
+            { value: 71, className: "Herbaceuous" },
+            { value: 81, className: "Hay/Pasture" },
+            { value: 82, className: "Cultivated Crops" },
+            { value: 90, className: "Woody Wetlands" },
+            { value: 95, className: "Emergent Herbaceuous Wetlands" },
+          ];
+
+
+
+          view.on("pointer-move", (event) => {
+            return hitTest(event).then(
+              (hit) => {
+                const data = hit.data;
+                const screenPoint = hit.screenPoint;
+
+                tooltip.move(screenPoint);
+
+                if (!data) {
+                  tooltip.hide();
+                  return;
+                }
+
+                tooltip.show();
+
+                const landCoverClassName =
+                  landCoverClasses.find(({ value }) => value === data.landCover)
+                    ?.className ?? data.landCover;
+
+                tooltip.setContent(
+                  `<div>Road distance: ${intl.formatNumber(data.roadDistance, { style: "unit", unit: "meter" })}</div>
+                  <div>Protected status: ${data.protectedStatus}</div>
+                  <div>Land cover: ${landCoverClassName}</div>
+                  <div>Terrain ruggedness: ${intl.formatNumber(data.terrainRuggedness)}</div>
+                  <div>Suitability score: ${data.score}</div>`
+                );
+              },
+              () => {}
+            );
+          });
+        }
+
+        function createTooltip() {
+          const tooltip = document.createElement("div");
+          const style = tooltip.style;
+
+          tooltip.setAttribute("role", "tooltip");
+          tooltip.classList.add("tooltip");
+
+          const textElement = document.createElement("div");
+          textElement.classList.add("esri-widget");
+          tooltip.appendChild(textElement);
+
+          view.container.appendChild(tooltip);
+
+          let x = 0;
+          let y = 0;
+          let targetX = 0;
+          let targetY = 0;
+          let visible = false;
+
+          // move the tooltip progressively
+          function move() {
+            x += (targetX - x) * 0.1;
+            y += (targetY - y) * 0.1;
+
+            if (Math.abs(targetX - x) < 1 && Math.abs(targetY - y) < 1) {
+              x = targetX;
+              y = targetY;
+            } else {
+              requestAnimationFrame(move);
+            }
+
+            style.transform =
+              "translate3d(" + Math.round(x) + "px," + Math.round(y) + "px, 0)";
+          }
+
+          return {
+            move(point) {
+              if (!visible) {
+                x = point.x;
+                y = point.y;
+              }
+
+              targetX = point.x;
+              targetY = point.y;
+              move();
+            },
+            setContent: (text) => {
+              textElement.innerHTML = text;
+            },
+            show() {
+              style.opacity = 1;
+              visible = true;
+            },
+            hide: () => {
+              style.opacity = 0;
+              visible = false;
+            },
+          };
+        }
+      })());
+  </script>
 </html>
+
 <!-- 
-Sample 1: https://codepen.io/U_B_U/pen/KKxPORm?editors=1000Sample 2: https://codepen.io/U_B_U/pen/bGxbwyR?editors=1000 -->
+Sample 1: https://codepen.io/U_B_U/pen/KKxPORm?editors=1000 
+Sample 2: https://codepen.io/U_B_U/pen/bGxbwyR?editors=1000
+https://codepen.io/U_B_U/pen/oNPgKzo?editors=1000
+https://codepen.io/U_B_U/pen/dyqPpqQ?editors=1000
+-->
