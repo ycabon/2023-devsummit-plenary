@@ -74,7 +74,7 @@
             <calcite-tile-select
               input-enabled="true"
               input-alignment="end"
-              icon="rangefinder"
+              icon="maximum-territory-distance"
               heading="Distance to roads"
               description="Roads are dangerous for mountain lions, and serve as a proxy for development."
               data-layerId="distanceToRoad">
@@ -83,7 +83,7 @@
             <calcite-tile-select
               input-enabled="true"
               input-alignment="end"
-              icon="rangefinder"
+              icon="security"
               heading="Protected status"
               description="Protected status refers to state parks, national forests, etc. tend to be minimally developed."
               data-layerId="protectedStatus">
@@ -91,7 +91,7 @@
             <calcite-tile-select
               input-enabled="true"
               input-alignment="end"
-              icon="rangefinder"
+              icon="urban-model"
               heading="Land cover"
               description="Landcover helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
               data-layerId="landCover">
@@ -99,7 +99,7 @@
             <calcite-tile-select
               input-enabled="true"
               input-alignment="end"
-              icon="rangefinder"
+              icon="altitude"
               heading="Rugged terrain"
               description="Rugged terrain helps mountain lions stalk prey, like deer, coyotes, feral pigs, and other small animals."
               data-layerId="terrainRugness">
@@ -108,11 +108,12 @@
             <calcite-tile-select
               input-enabled="true"
               input-alignment="end"
-              icon="rangefinder"
-              heading="habitat Analysis"
-              description=""
+              icon="analysis"
+              heading="Results"
+              description="TODO"
               data-layerId="habitatAnalysis"
-              style="margin-left: 20px">
+              style="margin-left: 20px",
+              checked>
             </calcite-tile-select>
           </calcite-tile-select-group>
         </div>
@@ -350,7 +351,10 @@ function createHabitatAnalysisFunction(roadThresholds, rugnessThresholds) {
     container: "viewDiv",
     map: map,
     center: [-118.6, 34.33],
-    zoom: 11
+    zoom: 11,
+    constraints: {
+      snapToZoom: false
+    }
   });
 
   const bandTileSelectGroup = document.getElementById("bandTileSelectGroup");
