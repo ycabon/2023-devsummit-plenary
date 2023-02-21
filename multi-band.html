@@ -1,0 +1,245 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>Multiple Bands Raster</title>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.7/calcite.css"
+    />
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js"
+    ></script>
+
+    <link
+      rel="stylesheet"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+    />
+    <script>
+      esriConfig = { has: { "mapview-transitions-duration": 1000 } };
+    </script>
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      /* #bandTileSelectGroup {
+        bottom: 32px;
+        height: 150px;
+      }
+      
+      #bandTileSelectGroup > calcite-tile-select {
+        width: 150px;
+      } */
+/* 
+      .content {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      } */
+
+      /* .controls {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        padding: 24px;
+        width: 100%;
+        bottom: 0;
+      } */
+/* 
+      .calcite-mode-light {
+        --calcite-ui-foreground-1: transparent;
+      }
+
+      calcite-slider {
+        --calcite-ui-foreground-1: white;
+      }
+
+      calcite-tile-select,
+      .esri-widget {
+        backdrop-filter: grayscale(0.5) blur(24px);
+        background-color: #ffffffbb;
+      } */
+    </style>
+  </head>
+
+  <body>
+    <calcite-shell>
+      <calcite-panel heading="Multiple Bands Raster">
+        <div id="viewDiv"></div>
+      </calcite-panel>
+    </calcite-shell>
+  </body>
+
+  <calcite-tile-select-group id="bandTileSelectGroup" layout="vertical"></calcite-tile-select-group>
+
+  <script>
+    require([
+      "esri/core/reactiveUtils",
+      "esri/core/promiseUtils",
+      "esri/intl",
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GroupLayer",
+      "esri/layers/ImageryTileLayer",
+      "esri/layers/ImageryLayer",
+      "esri/layers/support/RasterFunction",
+      "esri/layers/support/rasterFunctionConstants",
+      "esri/renderers/RasterColormapRenderer",
+      "esri/smartMapping/symbology/support/colorRamps",
+    ], (
+      reactiveUtils,
+      promiseUtils,
+      intl,
+      Map,
+      MapView,
+      GroupLayer,
+      ImageryTileLayer,
+      ImageryLayer,
+      RasterFunction,
+      rasterFunctionConstants,
+      RasterColormapRenderer,
+      colorRamps
+    ) =>
+      (async () => {
+        const blendMode = "overlay";
+        const effect = "drop-shadow(1px, 1px, 1px, #aaa)";
+
+        const bandTileSelectGroup = document.getElementById(
+          "bandTileSelectGroup"
+        );
+
+        const group = new GroupLayer({
+          visibilityMode: "exclusive",
+          blendMode: "multiply",
+          effect,
+        });
+
+        // https://www.esri.com/arcgis-blog/products/product/imagery/band-combinations-for-landsat-8/
+
+        const layers = [
+          {
+            bandIds: [0],
+            label: "Band 1 Coastal",
+            description: "Wavelength from 0.43 to 0.45 µm"
+          },
+          {
+            bandIds: [1],
+            label: "Band 2 Blue",
+            description: "Wavelength from 0.45 to 0.51 µm"
+          },
+          {
+            bandIds: [2],
+            label: "Band 3 Green",
+            description: "Wavelength from 0.53 to 0.59 µm"
+          },
+          {
+            bandIds: [3],
+            label: "Band 4 Red",
+            description: "Wavelength from 0.64 to 0.67 µm"
+          },
+          {
+            bandIds: [4],
+            label: "Band 5 Near-infrared",
+            description: "Wavelength from 0.85 to 0.88 µm"
+          },
+          // {
+          //   bandIds: [5],
+          //   label: "Band 6 Short-wave infrared 1",
+          //   description: "Wavelength from 1.57 to 1.65 µm"
+          // },
+          // {
+          //   bandIds: [6],
+          //   label: "Band 7 Short-wave infrared 2",
+          //   description: "Wavelength from 2.11 to 2.29 µm"
+          // },
+          {
+            bandIds: [3, 2, 1],
+            label: "Natural color",
+            visible: true,
+            description: "The natural color composite uses a band combination of red (4), green (3), and blue (2)."
+          },
+          {
+            bandIds: [4, 3, 2],
+            label: "Color infrared",
+          },
+          {
+            bandIds: [5, 4, 1],
+            label: "Agriculture",
+          },
+          {
+            bandIds: [6, 5, 3],
+            label: "Short-wave infrared",
+          }
+        ].forEach(({ bandIds, label, description, visible }) => {
+          const layer = new ImageryTileLayer({
+            url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_landsat_8/ImageServer",
+            bandIds,
+            visible: !!visible,
+          });
+
+          group.layers.add(layer);
+
+          const tile = document.createElement("calcite-tile-select");
+          tile.setAttribute("input-enabled", "true");
+          tile.setAttribute("input-alignment", "start");
+          tile.setAttribute("heading", label);
+          tile.setAttribute("description", description || `Bands: ${bandIds.join(", ")}`);
+          tile.addEventListener(
+            "calciteTileSelectChange",
+            () => (layer.visible = true)
+          );
+
+          bandTileSelectGroup.appendChild(tile);
+        });
+
+        const map = new Map({
+          basemap: "topo-vector", // { portalItem: { id: "2e8a3ccdfd6d42a995b79812b3b0ebc6" }},
+          layers: [group],
+        });
+
+        map.basemap.loadAll().then(() => {
+          map.basemap.baseLayers.forEach((layer) => {
+            layer.effect = "grayscale(1) opacity(0.5)";
+          });
+        });
+
+        view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-113.543, 48.6109],
+          scale: 349736,
+          constraints: {
+            snapToZoom: false,
+          },
+        });
+
+        view.ui.add("bandTileSelectGroup", "top-right");
+      })());
+  </script>
+</html>
+
+<!-- 
+Sample 1: https://codepen.io/U_B_U/pen/KKxPORm?editors=1000 
+Sample 2: https://codepen.io/U_B_U/pen/bGxbwyR?editors=1000
+https://codepen.io/U_B_U/pen/oNPgKzo?editors=1000
+https://codepen.io/U_B_U/pen/dyqPpqQ?editors=1000
+-->

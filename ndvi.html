@@ -166,6 +166,10 @@ const layer = new ImageryTileLayer({
 &nbsp;&nbsp;url,
 &nbsp;&nbsp;rasterFunction: colormap
 });</code></pre>
+  <!-- <calcite-button width="half" slot="footer-actions">
+    Run
+  </calcite-button> -->
+  <calcite-fab id="runButton" kind="brand" icon="play-f" scale="l" style="right: 12px; bottom: 12px; position: absolute;"></calcite-fab>
   </calcite-panel>
 
   <script>
@@ -197,7 +201,7 @@ const layer = new ImageryTileLayer({
         // https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/ndvi-function.htm
 
         const url =
-          "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_national_park_2015/ImageServer";
+          "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_landsat_8/ImageServer";
 
         const ndvi = new RasterFunction({
           functionName: "NDVI",
@@ -218,7 +222,8 @@ const layer = new ImageryTileLayer({
 
         const layer = new ImageryTileLayer({
           url,
-          rasterFunction: colormap,
+          bandIds: [3, 2, 1]
+          // rasterFunction: colormap,
         });
 
         const map = new Map({
@@ -226,142 +231,151 @@ const layer = new ImageryTileLayer({
           layers: [layer],
         });
 
-        const view = new MapView({
+        view = new MapView({
           container: "viewDiv",
           map: map,
-          center: [-120.8, 46],
-          zoom: 8,
+          center: [-113.5430, 48.6109],
+          scale: 349736,
           constraints: {
             snapToZoom: false,
           },
         });
 
-        view.ui.add(
-          new Expand({
-            expandIconClass: "esri-icon-menu", // see https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
-            // expandTooltip: "Expand LayerList", // optional, defaults to "Expand" for English locale
-            view: view,
-            content: document.getElementById("codeDiv"),
-          }),
-          "top-right"
-        );
+        // view.ui.add(
+        //   new Expand({
+        //     expandIconClass: "esri-icon-menu", // see https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
+        //     // expandTooltip: "Expand LayerList", // optional, defaults to "Expand" for English locale
+        //     view: view,
+        //     content: document.getElementById("codeDiv"),
+        //   }),
+        //   "top-right"
+        // );
 
-        view.whenLayerView(layer).then(() => {
-          view.goTo(layer.fullExtent);
-          console.log(layer.rasterInfo.keyProperties);
-        });
+        view.ui.add(document.getElementById("codeDiv"), "top-right");
+
+        // view.whenLayerView(layer).then(() => {
+        //   view.goTo(layer.fullExtent.clone().expand(2));
+        //   console.log(layer.rasterInfo.keyProperties);
+        // });
 
         const spectralCanvas = document.getElementById("spectral-chart");
         const chart = createSpectralChart(spectralCanvas);
 
         const tooltip = createTooltip();
         tooltip.appendContent(document.getElementById("chartDiv"));
+        tooltip.visible = false;
 
-        const debouncedUpdate = promiseUtils.debounce(async (event) => {
-          const point = view.toMap({ x: event.x, y: event.y });
-          const results = await layer.identify(point);
-          tooltip.move(event);
-          if (results.value) {
-            chart.data.datasets[0].data = results.value;
-            chart.update(0);
-            tooltip.hasData = true;
-            document.getElementById("ndviValueDiv").innerHTML = `NDVI value:  ${
-              (results.processedValue - 100) / 100
-            }`;
-          } else {
-            tooltip.hasData = false;
-          }
-        });
+        const runButton = document.getElementById("runButton");
+        runButton.addEventListener("click", () => {
+          layer.bandIds = null;
+          layer.rasterFunction = colormap;
 
-        function createSpectralChart(canvas) {
-          return new Chart(canvas.getContext("2d"), {
-            type: "line",
-            data: {
-              labels: [
-                "Coastal - 0.45",
-                "Blue - 0.51",
-                "Green - 0.59",
-                "Red - 0.67",
-                "NIR - 0.88",
-                "SWIR1 - 1.65",
-                "SWIR2 - 2.229",
-                "Cirrus - 1.38",
-              ],
-              datasets: [
-                {
-                  borderColor: "rgb(75, 192, 192)",
-                  tension: 0.1,
-                },
-              ],
-            },
-            options: {
-              scales: {
-                yAxis: {
-                  title: {
-                    display: true,
-                    text: "Reflectance",
-                  },
-                  min: 4500,
-                  max: 30000,
-                },
-                x: {
-                  title: {
-                    display: true,
-                    text: "Band Ids - wavelength (micrometer)",
-                  },
-                },
-              },
-              plugins: {
-                legend: {
-                  display: false,
-                },
-                title: {
-                  display: true,
-                  text: "Spectral profile",
-                },
+          const debouncedUpdate = promiseUtils.debounce(async (event) => {
+            const point = view.toMap({ x: event.x, y: event.y });
+            const results = await layer.identify(point);
+            if (results.value) {
+              chart.data.datasets[0].data = results.value;
+              chart.update(0);
+              tooltip.hasData = true;
+              document.getElementById("ndviValueDiv").innerHTML = `NDVI value:  ${
+                (results.processedValue - 100) / 100
+              }`;
+            } else {
+              tooltip.hasData = false;
+            }
+          });
+
+          let graphic = new Graphic({
+            symbol: {
+              type: "simple-marker",
+              color: "cyan",
+              size: "12px",
+              outline: {
+                color: "rgba(0, 128, 128, 0.5)",
+                width: "6px",
               },
             },
           });
-        }
 
-        let graphic = new Graphic({
-          symbol: {
-            type: "simple-marker",
-            color: "cyan",
-            size: "12px",
-            outline: {
-              color: "rgba(0, 128, 128, 0.5)",
-              width: "6px",
-            },
-          },
-        });
+          map.layers.add(
+            new GraphicsLayer({
+              graphics: [graphic],
+              effect: "drop-shadow(0px 1px 2px rgb(0, 0, 0, 30%))",
+            })
+          );
 
-        map.layers.add(
-          new GraphicsLayer({
-            graphics: [graphic],
-            effect: "drop-shadow(0px 1px 2px rgb(0, 0, 0, 30%))",
-          })
-        );
+          let ctrl = new AbortController();
 
-        let ctrl = new AbortController();
+          view.on("pointer-leave", (event) => {
+            tooltip.enabled = false;
+            graphic.visible = false;
+          });
+          view.on("pointer-enter", (event) => {
+            tooltip.enabled = true;
+            graphic.visible = true;
+          });
 
-        view.on("pointer-leave", (event) => {
-          tooltip.enabled = false;
-          graphic.visible = false;
-        });
-        view.on("pointer-enter", (event) => {
-          tooltip.enabled = true;
-          graphic.visible = true;
-        });
-
-        view.on(["pointer-move"], (event) => {
-          (graphic.geometry = view.toMap({ x: event.x, y: event.y })),
+          view.on("pointer-move", (event) => {
+            tooltip.move({ x: event.x, y: event.y });
+            graphic.geometry = view.toMap({ x: event.x, y: event.y });
             debouncedUpdate(event).catch((error) => {
               if (!promiseUtils.isAbortError(error)) {
                 throw error;
               }
             });
+          });
         });
+
+        function createSpectralChart(canvas) {
+            return new Chart(canvas.getContext("2d"), {
+              type: "line",
+              data: {
+                labels: [
+                  "Coastal - 0.45",
+                  "Blue - 0.51",
+                  "Green - 0.59",
+                  "Red - 0.67",
+                  "NIR - 0.88",
+                  "SWIR1 - 1.65",
+                  "SWIR2 - 2.229",
+                  "Cirrus - 1.38",
+                ],
+                datasets: [
+                  {
+                    borderColor: "rgb(75, 192, 192)",
+                    tension: 0.1,
+                  },
+                ],
+              },
+              options: {
+                scales: {
+                  yAxis: {
+                    title: {
+                      display: true,
+                      text: "Reflectance",
+                    },
+                    min: 4500,
+                    max: 30000,
+                  },
+                  x: {
+                    title: {
+                      display: true,
+                      text: "Band Ids - wavelength (micrometer)",
+                    },
+                  },
+                },
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                  title: {
+                    display: true,
+                    text: "Spectral profile",
+                  },
+                },
+              },
+            });
+          }
 
         function createTooltip() {
           const tooltip = document.createElement("div");
@@ -376,8 +390,8 @@ const layer = new ImageryTileLayer({
 
           view.surface.appendChild(tooltip);
 
-          let x = 0;
-          let y = 0;
+          let x = null;
+          let y = null;
           let targetX = 0;
           let targetY = 0;
           let enabled = false;
@@ -409,7 +423,7 @@ const layer = new ImageryTileLayer({
 
           return {
             move(point) {
-              if (!enabled) {
+              if (!enabled || x === null) {
                 x = point.x;
                 y = point.y;
               }
