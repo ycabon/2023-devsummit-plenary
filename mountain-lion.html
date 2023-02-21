@@ -90,7 +90,7 @@
         margin: 0 auto;
         padding: 12px;
         border-radius: 4px;
-        box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.75);
+        box-shadow: 0px 1px 2px rgb(0 0 0 / 30%);
         transform: translate3d(-50%, -125%, 0);
         backdrop-filter: blur(24px);
         background-color: #ffffffaa;
@@ -541,8 +541,8 @@
             if (!results.value) {
               return {
                 screenPoint,
-                data: null
-              }
+                data: null,
+              };
             }
 
             return {
@@ -576,8 +576,6 @@
             { value: 95, className: "Emergent Herbaceuous Wetlands" },
           ];
 
-
-
           view.on("pointer-move", (event) => {
             return hitTest(event).then(
               (hit) => {
@@ -598,10 +596,15 @@
                     ?.className ?? data.landCover;
 
                 tooltip.setContent(
-                  `<div>Road distance: ${intl.formatNumber(data.roadDistance, { style: "unit", unit: "meter" })}</div>
+                  `<div>Road distance: ${intl.formatNumber(data.roadDistance, {
+                    style: "unit",
+                    unit: "meter",
+                  })}</div>
                   <div>Protected status: ${data.protectedStatus}</div>
                   <div>Land cover: ${landCoverClassName}</div>
-                  <div>Terrain ruggedness: ${intl.formatNumber(data.terrainRuggedness)}</div>
+                  <div>Terrain ruggedness: ${intl.formatNumber(
+                    data.terrainRuggedness
+                  )}</div>
                   <div>Suitability score: ${data.score}</div>`
                 );
               },
