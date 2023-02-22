@@ -20,14 +20,13 @@
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/intellij-light.min.css" integrity="sha512-rxoFrVtnfvSuel468Qr3r4djCRmFKs4DiJXUnOeaA/+uac9DkEOTEhfkcwUNiGTiA4jr6pBvXk6leEhweuGaVg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-light.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css"
     />
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <link
       rel="stylesheet"
-      href="https://jsdev.arcgis.com/4.26/esri/themes/light/main.css"
+      href="https://jsdev.arcgis.com/4.26/esri/themes/dark/main.css"
     />
     <script src="https://jsdev.arcgis.com/4.26/"></script>
 
@@ -53,11 +52,6 @@
 
       #viewDiv {
         flex-grow: 1;
-      }
-
-      #chartDiv {
-        padding: 10px;
-        width: 360px;
       }
 
       /**
@@ -101,9 +95,9 @@
     </style>
   </head>
 
-  <body>
+  <body class="calcite-mode-dark">
     <calcite-shell>
-      <calcite-panel heading="Raster Functions: NDVI example">
+      <calcite-panel heading="TODO">
         <div class="content">
           <div id="viewDiv"></div>
         </div>
@@ -111,49 +105,29 @@
     </calcite-shell>
   </body>
 
-  <div
-    id="chartDiv"
-    class="esri-widget"
-    style="display: flex; flex-direction: column; align-items: center"
-  >
-    <h3 id="ndviValueDiv"></h3>
-    <canvas
-      id="spectral-chart"
-      height="300"
-      width="360"
-      class="esri-widget"
-    ></canvas>
-  </div>
-
   <calcite-panel id="codeDiv">
     <div style="padding: 12px">
       <calcite-block open>
-        <pre class="codeblock"><code class="language-javascript">const url =
-  "https://tiledimageservices.arcgis.com/
-  V6ZHFr6zdgNZuVG0/arcgis/rest/services/
-  Glacier_national_park_2015/ImageServer";
+        <pre class="codeblock"><code class="language-javascript">const bandStatistics = layer.rasterInfo.statistics[0];
 
-const ndvi = new RasterFunction({
-  functionName: "NDVI",
-  functionArguments: {
-    visibleBandID: 3,
-    infraredBandID: 4,
-    scientificOutput: false
-  }
+const renderer = new RasterStretchRenderer({
+  stretchType: "min-max",
+  statistics: [{
+    min: stretchSlider.minValue,
+    max: stretchSlider.maxValue,
+    avg: bandStatistics.avg,
+    stddev: bandStatistics.stddev,
+  }],
+  numberOfStandardDeviations: 1,
+  colorRamp: {
+    type: "algorithmic",
+    fromColor: [0, 0, 0, 0],
+    toColor: [0, 0, 0, 1],
+  },
 });
 
-const colormap = new RasterFunction({
-  functionName: "Colormap",
-  functionArguments: {
-    colormapName: NDVI3,
-    raster: ndvi
-  }
-});
-
-const layer = new ImageryTileLayer({
-  url,
-  rasterFunction: colormap
-});</code></pre>
+layer.renderer = renderer;
+        </code></pre>
         <calcite-fab
           id="runButton"
           kind="brand"
@@ -162,133 +136,145 @@ const layer = new ImageryTileLayer({
           style="right: 12px; bottom: 12px; position: absolute"
         ></calcite-fab>
       </calcite-block>
+      <calcite-label>
+        min-max value
+        <calcite-slider
+          id="stretchSlider"
+          min="0"
+          max="5000"
+          min-value="700"
+          max-value="2000"
+          label-handles
+          precise
+          max-label="5000m"
+          label-ticks
+          min-label="0m"
+        ></calcite-slider>
+      </calcite-label>
+      <calcite-label layout="inline">
+        <calcite-checkbox id="blendCheckbox"></calcite-checkbox>
+        Enable blend mode <code>"destination-in"</code>
+      </calcite-label>
     </div>
   </calcite-panel>
 
   <script>
     require([
+      "esri/core/promiseUtils",
+      "esri/Graphic",
       "esri/Map",
       "esri/views/MapView",
-      "esri/layers/support/RasterFunction",
-      "esri/layers/support/rasterFunctionConstants",
-      "esri/layers/GraphicsLayer",
+      "esri/layers/GroupLayer",
+      "esri/layers/TileLayer",
       "esri/layers/ImageryTileLayer",
-      "esri/Graphic",
-      "esri/core/promiseUtils",
-      "esri/widgets/Expand",
+      "esri/layers/GraphicsLayer",
+      "esri/renderers/RasterStretchRenderer",
     ], (
+      promiseUtils,
+      Graphic,
       Map,
       MapView,
-      RasterFunction,
-      rasterFunctionConstants,
-      GraphicsLayer,
+      GroupLayer,
+      TileLayer,
       ImageryTileLayer,
-      Graphic,
-      promiseUtils,
-      Expand
+      GraphicsLayer,
+      RasterStretchRenderer
     ) =>
       (async () => {
-        // useful links
-        // scientific index outputs values between -1.0 and 1.0, which represents vegetation density and vigor. Negative values are mainly generated from clouds, water, and snow, and values near zero are mainly generated from rock and bare soil. Very low values (0.1 and below) of NDVI correspond to barren areas of rock, sand, or snow. Moderate values (0.2 to 0.3) represent shrub and grassland, while high values (0.6 to 0.8) indicate temperate and tropical rainforests.
-
-        // https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/ndvi-function.htm
-
         const url =
-          "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_landsat_8/ImageServer";
+          "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer";
 
-        const ndvi = new RasterFunction({
-          functionName: "NDVI",
-          functionArguments: {
-            visibleBandID: 3,
-            infraredBandID: 4,
-            scientificOutput: false, // when true -1 to 1
-          },
-        });
-
-        const colormap = new RasterFunction({
-          functionName: "Colormap",
-          functionArguments: {
-            colormapName: rasterFunctionConstants.colormapName.NDVI3,
-            raster: ndvi,
-          },
-        });
-
+        // create a ImageryTileLayer from tiled elevation service
         const layer = new ImageryTileLayer({
-          url,
-          bandIds: [3, 2, 1],
-          // rasterFunction: colormap,
+          url: url,
+          title: "World Elevation ImageryTileLayer",
+        });
+
+        const groupLayer = new GroupLayer({
+          title: "Group Layer",
+          layers: [
+            new TileLayer({
+              url: "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer",
+              listMode: "hide-children",
+            }),
+            layer,
+          ],
         });
 
         const map = new Map({
-          basemap: "gray-vector",
-          layers: [layer],
+          basemap: "dark-gray-vector",
+          layers: [groupLayer],
         });
 
         view = new MapView({
           container: "viewDiv",
           map: map,
-          center: [-113.543, 48.6109],
-          scale: 349736,
+          zoom: 2.5,
+          center: [-30, -20],
+          // zoom: 4,
+          // center: [84, 31],
           constraints: {
             snapToZoom: false,
           },
         });
 
-        // view.ui.add(
-        //   new Expand({
-        //     expandIconClass: "esri-icon-menu", // see https://developers.arcgis.com/javascript/latest/guide/esri-icon-font/
-        //     // expandTooltip: "Expand LayerList", // optional, defaults to "Expand" for English locale
-        //     view: view,
-        //     content: document.getElementById("codeDiv"),
-        //   }),
-        //   "top-right"
-        // );
-
         view.ui.add(document.getElementById("codeDiv"), "top-right");
 
-        // view.whenLayerView(layer).then(() => {
-        //   view.goTo(layer.fullExtent.clone().expand(2));
-        //   console.log(layer.rasterInfo.keyProperties);
-        // });
+        const stretchSlider = document.getElementById("stretchSlider");
+        const blendCheckbox = document.getElementById("blendCheckbox");
+        blendCheckbox.addEventListener("calciteCheckboxChange", () => {
+          layer.blendMode = layer.blendMode === "normal" ? "destination-in" : "normal";
+        });
 
-        const spectralCanvas = document.getElementById("spectral-chart");
-        const chart = createSpectralChart(spectralCanvas);
+        function updateRenderer() {
+const bandStatistics = layer.rasterInfo.statistics[0];
+
+const renderer = new RasterStretchRenderer({
+  stretchType: "min-max",
+  statistics: [{
+    min: stretchSlider.minValue,
+    max: stretchSlider.maxValue,
+    avg: bandStatistics.avg,
+    stddev: bandStatistics.stddev,
+  }],
+  numberOfStandardDeviations: 1,
+  colorRamp: {
+    type: "algorithmic",
+    fromColor: [0, 0, 0, 0],
+    toColor: [0, 0, 0, 1],
+  },
+});
+
+layer.renderer = renderer;
+        }
 
         const runButton = document.getElementById("runButton");
         runButton.addEventListener("click", () => {
+          stretchSlider.addEventListener("calciteSliderInput", updateRenderer);
 
-          view.ui.add(document.getElementById("chartDiv"), "bottom-left");
-          layer.bandIds = null;
-          layer.rasterFunction = colormap;
+          updateRenderer();
 
-          // const tooltip = createTooltip();
-          // tooltip.hasData = false;
-          // tooltip.appendContent(document.getElementById("chartDiv"));
+          const tooltip = createTooltip();
+          tooltip.hasData = false;
 
           const debouncedUpdate = promiseUtils.debounce(async (event) => {
             const point = view.toMap({ x: event.x, y: event.y });
             const results = await layer.identify(point);
             if (results.value) {
-              chart.data.datasets[0].data = results.value;
-              chart.update(0);
-              // tooltip.hasData = true;
-              document.getElementById(
-                "ndviValueDiv"
-              ).innerHTML = `NDVI value:  ${
-                (results.processedValue - 100) / 100
-              }`;
+              tooltip.hasData = false;
             } else {
-              // tooltip.hasData = false;
+              tooltip.hasData = false;
             }
           });
 
           let graphic = new Graphic({
+            visible: false,
             symbol: {
               type: "simple-marker",
-              color: "red",
+              color: "cyan",
               size: "12px",
               outline: {
-                color: "rgba(128, 0, 0, 0.5)",
+                color: "rgba(0, 128, 128, 0.5)",
                 width: "6px",
               },
             },
@@ -304,16 +290,16 @@ const layer = new ImageryTileLayer({
           let ctrl = new AbortController();
 
           view.on("pointer-leave", (event) => {
-            // tooltip.enabled = false;
-            graphic.visible = false;
+            tooltip.enabled = false;
+            // graphic.visible = false;
           });
           view.on("pointer-enter", (event) => {
-            // tooltip.enabled = true;
-            graphic.visible = true;
+            tooltip.enabled = true;
+            // graphic.visible = true;
           });
 
           view.on("pointer-move", (event) => {
-            // tooltip.move({ x: event.x, y: event.y });
+            tooltip.move({ x: event.x, y: event.y });
             graphic.geometry = view.toMap({ x: event.x, y: event.y });
             debouncedUpdate(event).catch((error) => {
               if (!promiseUtils.isAbortError(error)) {
@@ -322,57 +308,6 @@ const layer = new ImageryTileLayer({
             });
           });
         });
-
-        function createSpectralChart(canvas) {
-          return new Chart(canvas.getContext("2d"), {
-            type: "line",
-            data: {
-              labels: [
-                "Coastal - 0.45",
-                "Blue - 0.51",
-                "Green - 0.59",
-                "Red - 0.67",
-                "NIR - 0.88",
-                "SWIR1 - 1.65",
-                "SWIR2 - 2.229",
-                "Cirrus - 1.38",
-              ],
-              datasets: [
-                {
-                  borderColor: "rgb(75, 192, 192)",
-                  tension: 0.1,
-                },
-              ],
-            },
-            options: {
-              scales: {
-                yAxis: {
-                  title: {
-                    display: true,
-                    text: "Reflectance",
-                  },
-                  min: 4500,
-                  max: 30000,
-                },
-                x: {
-                  title: {
-                    display: true,
-                    text: "Band Ids - wavelength (micrometer)",
-                  },
-                },
-              },
-              plugins: {
-                legend: {
-                  display: false,
-                },
-                title: {
-                  display: true,
-                  text: "Spectral profile",
-                },
-              },
-            },
-          });
-        }
 
         function createTooltip() {
           const tooltip = document.createElement("div");

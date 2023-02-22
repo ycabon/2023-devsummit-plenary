@@ -89,7 +89,7 @@
     </calcite-shell>
   </body>
 
-  <calcite-tile-select-group id="bandTileSelectGroup" layout="vertical"></calcite-tile-select-group>
+  <calcite-tile-select-group id="bandTileSelectGroup" layout="vertical" style="width: 250px"></calcite-tile-select-group>
 
   <script>
     require([
@@ -175,7 +175,7 @@
             bandIds: [3, 2, 1],
             label: "Natural color",
             visible: true,
-            description: "The natural color composite uses a band combination of red (4), green (3), and blue (2)."
+            description: "Band combination of red (4), green (3), and blue (2)."
           },
           {
             bandIds: [4, 3, 2],
@@ -203,6 +203,7 @@
           tile.setAttribute("input-alignment", "start");
           tile.setAttribute("heading", label);
           tile.setAttribute("description", description || `Bands: ${bandIds.join(", ")}`);
+          tile.setAttribute("width", "full");
           tile.addEventListener(
             "calciteTileSelectChange",
             () => (layer.visible = true)
