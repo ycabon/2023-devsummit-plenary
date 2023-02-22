@@ -69,6 +69,7 @@
         position: absolute;
         pointer-events: none;
         transition: opacity 200ms;
+        opacity: 0;
       }
 
       .tooltip > div {
@@ -76,7 +77,7 @@
         padding: 12px;
         border-radius: 4px;
         box-shadow: 0px 1px 2px rgb(0 0 0 / 30%);
-        transform: translate3d(-50%, -105%, 0);
+        transform: translate3d(-110%, -110%, 0);
         backdrop-filter: blur(24px);
         background-color: #ffffffaa;
         z-index: 9999;
@@ -142,8 +143,8 @@
 
   <calcite-panel id="codeDiv" heading="Code Snippet">
     <pre><code class="language-javascript">const url =
-  "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/
-  rest/services/Glacier_national_park_2015/ImageServer";
+      &nbsp;&nbsp;"https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/
+      &nbsp;&nbsp;&nbsp;&nbsp;rest/services/Glacier_national_park_2015/ImageServer";
 
 const ndvi = new RasterFunction({
 &nbsp;&nbsp;functionName: "NDVI",
@@ -261,14 +262,14 @@ const layer = new ImageryTileLayer({
         const spectralCanvas = document.getElementById("spectral-chart");
         const chart = createSpectralChart(spectralCanvas);
 
-        const tooltip = createTooltip();
-        tooltip.appendContent(document.getElementById("chartDiv"));
-        tooltip.visible = false;
-
         const runButton = document.getElementById("runButton");
         runButton.addEventListener("click", () => {
           layer.bandIds = null;
           layer.rasterFunction = colormap;
+
+          const tooltip = createTooltip();
+          tooltip.hasData = false;
+          tooltip.appendContent(document.getElementById("chartDiv"));
 
           const debouncedUpdate = promiseUtils.debounce(async (event) => {
             const point = view.toMap({ x: event.x, y: event.y });
@@ -388,7 +389,7 @@ const layer = new ImageryTileLayer({
           textElement.classList.add("esri-widget");
           tooltip.appendChild(textElement);
 
-          view.surface.appendChild(tooltip);
+          view.surface.insertBefore(tooltip, view.surface.children[0]);
 
           let x = null;
           let y = null;
