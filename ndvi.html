@@ -246,10 +246,9 @@ const layer = new ImageryTileLayer({
 
         view.ui.add(document.getElementById("codeDiv"), "top-right");
 
-        // view.whenLayerView(layer).then(() => {
-        //   view.goTo(layer.fullExtent.clone().expand(2));
-        //   console.log(layer.rasterInfo.keyProperties);
-        // });
+        view.whenLayerView(layer).then(() => {
+          view.goTo(layer.fullExtent.clone().expand(1.1));
+        });
 
         const spectralCanvas = document.getElementById("spectral-chart");
         const chart = createSpectralChart(spectralCanvas);

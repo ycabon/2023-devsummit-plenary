@@ -202,8 +202,11 @@
           tile.setAttribute("input-enabled", "true");
           tile.setAttribute("input-alignment", "start");
           tile.setAttribute("heading", label);
-          tile.setAttribute("description", description || `Bands: ${bandIds.join(", ")}`);
           tile.setAttribute("width", "full");
+          tile.setAttribute("description", description || `Bands: ${bandIds.join(", ")}`);
+          if (visible) {
+            tile.setAttribute("checked", "true");
+          }
           tile.addEventListener(
             "calciteTileSelectChange",
             () => (layer.visible = true)
@@ -231,6 +234,11 @@
           constraints: {
             snapToZoom: false,
           },
+        });
+
+
+        view.whenLayerView(group.layers.at(0)).then(() => {
+          view.goTo(group.layers.at(0).fullExtent.clone().expand(1.1));
         });
 
         view.ui.add("bandTileSelectGroup", "top-right");
