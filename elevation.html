@@ -74,9 +74,14 @@
         box-shadow: 0px 1px 2px rgb(255 255 255 / 30%);
         transform: translate3d(-50%, -125%, 0);
         backdrop-filter: contrast(175%) brightness(300%) blur(12px);
-        background-color: #222d;
+        /* background-color: #222d; */
+        background-color: #0cc6ffcf;
+        color: black;
         z-index: 9999;
-        font-size: large;
+        font-size: xx-large;
+        font-variant-numeric: tabular-nums;
+        width: 150px;
+        text-align: center;
       }
       .esri-expand__content {
         background-color: white;
@@ -296,7 +301,7 @@ layer.renderer = renderer;
               intl.formatNumber(results.pixelBlock.pixels[0][0], {
                 style: "unit",
                 unit: "meter",
-                unitDisplay: "long",
+                unitDisplay: "short",
                 maximumFractionDigits: 0,
               })
             );
