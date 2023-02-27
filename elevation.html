@@ -54,6 +54,9 @@
         flex-grow: 1;
       }
 
+      .esri-expand__content--expanded {
+        width: 580;
+      }
       /**
   * Hover tooltip
   */
@@ -174,6 +177,7 @@ layer.renderer = renderer;
       "esri/layers/ImageryTileLayer",
       "esri/layers/GraphicsLayer",
       "esri/renderers/RasterStretchRenderer",
+      "esri/widgets/Expand"
     ], (
       promiseUtils,
       Graphic,
@@ -185,7 +189,8 @@ layer.renderer = renderer;
       TileLayer,
       ImageryTileLayer,
       GraphicsLayer,
-      RasterStretchRenderer
+      RasterStretchRenderer,
+      Expand
     ) =>
       (async () => {
         const url =
@@ -225,7 +230,12 @@ layer.renderer = renderer;
           },
         });
 
-        view.ui.add(document.getElementById("codeDiv"), "top-right");
+        view.ui.add(new Expand({
+          content: document.getElementById("codeDiv"),
+          view
+        }), "top-right")
+
+        // view.ui.add(document.getElementById("codeDiv"), "top-right");
 
         const stretchSlider = document.getElementById("stretchSlider");
         const blendCheckbox = document.getElementById("blendCheckbox");
