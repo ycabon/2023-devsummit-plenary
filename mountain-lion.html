@@ -24,8 +24,7 @@
     <script>
       esriConfig = { has: { "mapview-transitions-duration": 500 } };
     </script>
-    <!-- <script src="https://jsdev.arcgis.com/4.26/"></script> -->
-    <script src="https://jsapi.esri.com/testbuilds/wenx5853-raster-function-flicker/buildOutput/init.js"></script>
+    <script src="https://jsdev.arcgis.com/4.26/"></script>
 
     <style>
       html,
@@ -93,10 +92,11 @@
         padding: 12px;
         border-radius: 4px;
         box-shadow: 0px 1px 2px rgb(0 0 0 / 30%);
-        transform: translate3d(-50%, -125%, 0);
+        transform: translate3d(-50%, -120%, 0);
         backdrop-filter: blur(24px);
         background-color: #ffffffaa;
         z-index: 10000;
+        font-size: large;
       }
     </style>
   </head>
@@ -118,6 +118,7 @@
                 heading="Distance to roads"
                 description="Roads are dangerous for mountain lions, and serve as a proxy for development."
                 data-layerId="distanceToRoad"
+                checked
               >
                 <calcite-slider
                   id="distanceToRoadSlider"
@@ -126,7 +127,6 @@
                   max-value="750"
                   min="0"
                   max="1000"
-                  disabled="true"
                 ></calcite-slider>
               </calcite-tile-select>
               <calcite-tile-select
@@ -162,7 +162,6 @@
                   max-value="200"
                   min="0"
                   max="300"
-                  disabled="true"
                 ></calcite-slider>
               </calcite-tile-select>
               <calcite-tile-select
@@ -170,16 +169,23 @@
                 input-alignment="end"
                 icon="analysis"
                 heading="Results"
-                description="Mountain lions are known to inhabit diverse habitats across most of California. Mountain lions can be found wherever deer are present, since deer are a mountain lion's primary food source in most areas. As such, foothills and mountains are considered prime mountain lion habitat."
+                description="Mountain lions are known to inhabit diverse habitats across most of California. Mountain lions can be found wherever deer are present. As such, foothills and mountains are considered prime mountain lion habitat."
                 data-layerId="habitatAnalysis"
-                style="margin-left: 20px;"
-                checked>
+                style="margin-left: 20px"
+              >
+              <calcite-fab icon="question-mark" style="right: 12px; bottom: 12px; position: absolute" onclick="displayAnalysisImage()"></calcite-fab>
               </calcite-tile-select>
             </calcite-tile-select-group>
           </div>
         </div>
       </calcite-panel>
     </calcite-shell>
+
+    <calcite-modal aria-labelledby="modal-title" id="modal" width="l">
+      <div slot="content" style="display: flex; justify-content: center;">
+        <img src="./analysis.png">
+      </div>
+    </calcite-modal>
   </body>
 
   <script>
@@ -200,9 +206,12 @@
       reactiveUtils,
       promiseUtils,
       intl,
-      Map, Graphic,
+      Map,
+      Graphic,
       MapView,
-      GraphicsLayer, GroupLayer, ImageryTileLayer,
+      GraphicsLayer,
+      GroupLayer,
+      ImageryTileLayer,
       RasterFunction,
       rasterFunctionConstants,
       colorRamps
@@ -397,7 +406,7 @@
             createRoadFunction(roadThresholds),
             enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           ),
-          visible: false,
+          visible: true,
         });
 
         const protectedStatusLayer = new ImageryTileLayer({
@@ -437,7 +446,7 @@
             createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
             enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
           ),
-          visible: true,
+          visible: false,
         });
 
         const group = new GroupLayer({
@@ -467,8 +476,8 @@
         view = new MapView({
           container: "viewDiv",
           map: map,
-          center: [-118.6, 34.33],
-          zoom: 11,
+          center: [-118.6, 34.25],
+          zoom: 10.5,
           constraints: {
             snapToZoom: false,
           },
@@ -485,8 +494,12 @@
             const layer = map.findLayerById(layerId);
             layer.visible = true;
 
-            distanceToRoadSlider.disabled = layerId !== distanceToRoadLayer.id;
-            terrainRugnessSlider.disabled = layerId !== terrainRugnessLayer.id;
+            // distanceToRoadSlider.disabled = layerId !== distanceToRoadLayer.id;
+            // terrainRugnessSlider.disabled = layerId !== terrainRugnessLayer.id;
+            if (graphic) {
+              graphic.visible = habitatAnalysisLayer.visible;
+              tooltip.enabled = habitatAnalysisLayer.visible;
+            }
           }
         );
 
@@ -499,10 +512,6 @@
             createRoadFunction(roadThresholds),
             enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           );
-          habitatAnalysisLayer.rasterFunction = createColormapFunction(
-            createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
-            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
-          );
         });
 
         terrainRugnessSlider.addEventListener("calciteSliderInput", () => {
@@ -514,6 +523,24 @@
             createTerrainRuggednessFunction(rugnessThresholds),
             enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           );
+        });
+
+        distanceToRoadSlider.addEventListener("calciteSliderChange", () => {
+          roadThresholds = [
+            distanceToRoadSlider.minValue,
+            distanceToRoadSlider.maxValue,
+          ];
+          habitatAnalysisLayer.rasterFunction = createColormapFunction(
+            createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+          );
+        });
+
+        terrainRugnessSlider.addEventListener("calciteSliderChange", () => {
+          rugnessThresholds = [
+            terrainRugnessSlider.minValue,
+            terrainRugnessSlider.maxValue,
+          ];
           habitatAnalysisLayer.rasterFunction = createColormapFunction(
             createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
             enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
@@ -526,8 +553,10 @@
           .whenLayerView(habitatAnalysisLayer)
           .then((layerView) => setupHoverTooltip(layerView));
 
+        let tooltip, graphic;
+
         function setupHoverTooltip(layerView) {
-          const tooltip = createTooltip();
+          tooltip = createTooltip();
 
           const hitTest = promiseUtils.debounce(async (event) => {
             const screenPoint = { x: event.x, y: event.y };
@@ -553,7 +582,7 @@
             };
           });
 
-          let graphic = new Graphic({
+          graphic = new Graphic({
             symbol: {
               type: "simple-marker",
               color: "cyan",
@@ -598,49 +627,44 @@
             graphic.visible = false;
           });
           view.on("pointer-enter", (event) => {
-            tooltip.enabled = true;
-            graphic.visible = true;
+            tooltip.enabled = habitatAnalysisLayer.visible;
+            graphic.visible = habitatAnalysisLayer.visible;
           });
 
-          view
-            .on("pointer-move", (event) => {
-              tooltip.move({ x: event.x, y: event.y });
-              graphic.geometry = view.toMap({ x: event.x, y: event.y });
-              hitTest(event).then(
-                (hit) => {
-                  const data = hit.data;
+          view.on("pointer-move", (event) => {
+            tooltip.move({ x: event.x, y: event.y });
+            graphic.geometry = view.toMap({ x: event.x, y: event.y });
+            hitTest(event).then(
+              (hit) => {
+                const data = hit.data;
 
-                  if (!data) {
-                    tooltip.hasData = false;
-                    return;
-                  }
+                if (!data) {
+                  tooltip.hasData = false;
+                  return;
+                }
 
-                  tooltip.hasData = true
+                tooltip.hasData = true;
 
-                  const landCoverClassName =
-                    landCoverClasses.find(
-                      ({ value }) => value === data.landCover
-                    )?.className ?? data.landCover;
+                const landCoverClassName =
+                  landCoverClasses.find(({ value }) => value === data.landCover)
+                    ?.className ?? data.landCover;
 
-                  tooltip.setContent(
-                    `<div>Road distance: ${intl.formatNumber(
-                      data.roadDistance,
-                      {
-                        style: "unit",
-                        unit: "meter",
-                      }
-                    )}</div>
+                tooltip.setContent(
+                  `<div>Road distance: ${intl.formatNumber(data.roadDistance, {
+                    style: "unit",
+                    unit: "meter",
+                  })}</div>
                   <div>Protected status: ${data.protectedStatus}</div>
                   <div>Land cover: ${landCoverClassName}</div>
                   <div>Terrain ruggedness: ${intl.formatNumber(
                     data.terrainRuggedness
                   )}</div>
                   <div>Suitability score: ${data.score}</div>`
-                  );
-                },
-                () => {}
-              );
-            });
+                );
+              },
+              () => {}
+            );
+          });
         }
 
         function createTooltip() {
@@ -715,6 +739,11 @@
           };
         }
       })());
+
+      function displayAnalysisImage() {
+        const modal = document.getElementById("modal");
+        modal.open = true;
+      }
   </script>
 </html>
 

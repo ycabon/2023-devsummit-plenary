@@ -5,7 +5,7 @@
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
     />
-    <title>Client side raster function support</title>
+    <title>Single band ImageryTileLayer</title>
 
     <link
       rel="stylesheet"
@@ -68,11 +68,12 @@
         margin: 0 auto;
         padding: 12px;
         border-radius: 4px;
-        box-shadow: 0px 1px 2px rgb(0 0 0 / 30%);
-        transform: translate3d(-110%, -110%, 0);
-        backdrop-filter: blur(24px);
-        background-color: #ffffffaa;
+        box-shadow: 0px 1px 2px rgb(255 255 255 / 30%);
+        transform: translate3d(-50%, -125%, 0);
+        backdrop-filter: contrast(175%) brightness(300%) blur(12px);
+        background-color: #222d;
         z-index: 9999;
+        font-size: large;
       }
       .esri-expand__content {
         background-color: white;
@@ -97,7 +98,7 @@
 
   <body class="calcite-mode-dark">
     <calcite-shell>
-      <calcite-panel heading="TODO">
+      <calcite-panel heading="Single band ImageryTileLayer">
         <div class="content">
           <div id="viewDiv"></div>
         </div>
@@ -108,7 +109,9 @@
   <calcite-panel id="codeDiv">
     <div style="padding: 12px">
       <calcite-block open>
-        <pre class="codeblock"><code class="language-javascript">const bandStatistics = layer.rasterInfo.statistics[0];
+        <pre
+          class="codeblock"
+        ><code class="language-javascript">const bandStatistics = layer.rasterInfo.statistics[0];
 
 const renderer = new RasterStretchRenderer({
   stretchType: "min-max",
@@ -162,7 +165,9 @@ layer.renderer = renderer;
     require([
       "esri/core/promiseUtils",
       "esri/Graphic",
+      "esri/geometry/Extent",
       "esri/Map",
+      "esri/intl",
       "esri/views/MapView",
       "esri/layers/GroupLayer",
       "esri/layers/TileLayer",
@@ -172,7 +177,9 @@ layer.renderer = renderer;
     ], (
       promiseUtils,
       Graphic,
+      Extent,
       Map,
+      intl,
       MapView,
       GroupLayer,
       TileLayer,
@@ -223,89 +230,110 @@ layer.renderer = renderer;
         const stretchSlider = document.getElementById("stretchSlider");
         const blendCheckbox = document.getElementById("blendCheckbox");
         blendCheckbox.addEventListener("calciteCheckboxChange", () => {
-          layer.blendMode = layer.blendMode === "normal" ? "destination-in" : "normal";
+          layer.blendMode =
+            layer.blendMode === "normal" ? "destination-in" : "normal";
         });
 
         function updateRenderer() {
-const bandStatistics = layer.rasterInfo.statistics[0];
+          const bandStatistics = layer.rasterInfo.statistics[0];
 
-const renderer = new RasterStretchRenderer({
-  stretchType: "min-max",
-  statistics: [{
-    min: stretchSlider.minValue,
-    max: stretchSlider.maxValue,
-    avg: bandStatistics.avg,
-    stddev: bandStatistics.stddev,
-  }],
-  numberOfStandardDeviations: 1,
-  colorRamp: {
-    type: "algorithmic",
-    fromColor: [0, 0, 0, 0],
-    toColor: [0, 0, 0, 1],
-  },
-});
+          const renderer = new RasterStretchRenderer({
+            stretchType: "min-max",
+            statistics: [
+              {
+                min: stretchSlider.minValue,
+                max: stretchSlider.maxValue,
+                avg: bandStatistics.avg,
+                stddev: bandStatistics.stddev,
+              },
+            ],
+            numberOfStandardDeviations: 1,
+            colorRamp: {
+              type: "algorithmic",
+              fromColor: [0, 0, 0, 0],
+              toColor: [0, 0, 0, 1],
+            },
+          });
 
-layer.renderer = renderer;
+          layer.renderer = renderer;
         }
 
         const runButton = document.getElementById("runButton");
         runButton.addEventListener("click", () => {
-          stretchSlider.addEventListener("calciteSliderInput", updateRenderer);
-
           updateRenderer();
+          stretchSlider.addEventListener("calciteSliderInput", updateRenderer);
+        });
 
-          const tooltip = createTooltip();
-          tooltip.hasData = false;
+        const tooltip = createTooltip();
+        tooltip.hasData = false;
 
-          const debouncedUpdate = promiseUtils.debounce(async (event) => {
-            const point = view.toMap({ x: event.x, y: event.y });
-            const results = await layer.identify(point);
-            if (results.value) {
-              tooltip.hasData = false;
-            } else {
-              tooltip.hasData = false;
-            }
-          });
-
-          let graphic = new Graphic({
-            visible: false,
-            symbol: {
-              type: "simple-marker",
-              color: "cyan",
-              size: "12px",
-              outline: {
-                color: "rgba(0, 128, 128, 0.5)",
-                width: "6px",
-              },
-            },
-          });
-
-          map.layers.add(
-            new GraphicsLayer({
-              graphics: [graphic],
-              effect: "drop-shadow(0px 1px 2px rgb(0, 0, 0, 30%))",
-            })
+        const debouncedUpdate = promiseUtils.debounce(async (event) => {
+          const point = view.toMap({ x: event.x, y: event.y });
+          const halfRes = view.resolution / 3;
+          const results = await layer.fetchPixels(
+            new Extent({
+              xmin: point.x - halfRes,
+              ymin: point.y - halfRes,
+              xmax: point.x + halfRes,
+              ymax: point.y + halfRes,
+              spatialReference: view.spatialReference,
+            }),
+            1,
+            1
           );
+          if (results.pixelBlock) {
+            tooltip.setContent(
+              intl.formatNumber(results.pixelBlock.pixels[0][0], {
+                style: "unit",
+                unit: "meter",
+                unitDisplay: "long",
+                maximumFractionDigits: 0,
+              })
+            );
+            tooltip.hasData = true;
+          } else {
+            tooltip.hasData = false;
+          }
+        });
 
-          let ctrl = new AbortController();
+        let graphic = new Graphic({
+          visible: false,
+          symbol: {
+            type: "simple-marker",
+            color: "cyan",
+            size: "12px",
+            outline: {
+              color: "rgba(0, 128, 128, 0.5)",
+              width: "6px",
+            },
+          },
+        });
 
-          view.on("pointer-leave", (event) => {
-            tooltip.enabled = false;
-            // graphic.visible = false;
-          });
-          view.on("pointer-enter", (event) => {
-            tooltip.enabled = true;
-            // graphic.visible = true;
-          });
+        map.layers.add(
+          new GraphicsLayer({
+            graphics: [graphic],
+            effect: "drop-shadow(0px 1px 2px rgb(0, 0, 0, 30%))",
+          })
+        );
 
-          view.on("pointer-move", (event) => {
-            tooltip.move({ x: event.x, y: event.y });
-            graphic.geometry = view.toMap({ x: event.x, y: event.y });
-            debouncedUpdate(event).catch((error) => {
-              if (!promiseUtils.isAbortError(error)) {
-                throw error;
-              }
-            });
+        let ctrl = new AbortController();
+
+        view.on("pointer-leave", (event) => {
+          tooltip.enabled = false;
+          // graphic.visible = false;
+        });
+        view.on("pointer-enter", (event) => {
+          tooltip.enabled = true;
+          // graphic.visible = true;
+        });
+
+        view.on("pointer-move", (event) => {
+          tooltip.move({ x: event.x, y: event.y });
+          graphic.geometry = view.toMap({ x: event.x, y: event.y });
+          debouncedUpdate(event).catch((error) => {
+            if (!promiseUtils.isAbortError(error)) {
+              throw error;
+            }
           });
         });
 
