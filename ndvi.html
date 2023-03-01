@@ -114,9 +114,40 @@
   <div
     id="chartDiv"
     class="esri-widget"
-    style="display: flex; flex-direction: column; align-items: center"
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: stretch;
+    "
   >
-    <h3 id="ndviValueDiv"></h3>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      "
+    >
+      <span
+        style="
+          font-size: 11px;
+          color: #666666;
+          font-weight: bolder;
+          font-family: Arial;
+        "
+        >NDVI</span
+      >
+      <span
+        id="ndviValueDiv"
+        style="
+          font-size: 36px;
+          padding-top: 12px;
+          font-weight: bold;
+          color: #309100;
+          padding-bottom: 8px;
+        "
+      ></span>
+    </div>
     <canvas
       id="spectral-chart"
       height="300"
@@ -167,6 +198,7 @@ const layer = new ImageryTileLayer({
 
   <script>
     require([
+      "esri/intl",
       "esri/Map",
       "esri/views/MapView",
       "esri/layers/support/RasterFunction",
@@ -177,6 +209,7 @@ const layer = new ImageryTileLayer({
       "esri/core/promiseUtils",
       "esri/widgets/Expand",
     ], (
+      intl,
       Map,
       MapView,
       RasterFunction,
@@ -261,7 +294,6 @@ const layer = new ImageryTileLayer({
 
         const runButton = document.getElementById("runButton");
         runButton.addEventListener("click", () => {
-
           view.ui.add(document.getElementById("chartDiv"), "bottom-left");
           layer.bandIds = null;
           layer.rasterFunction = colormap;
@@ -277,11 +309,11 @@ const layer = new ImageryTileLayer({
               chart.data.datasets[0].data = results.value;
               chart.update(0);
               // tooltip.hasData = true;
-              document.getElementById(
-                "ndviValueDiv"
-              ).innerHTML = `NDVI value:  ${
-                (results.processedValue - 100) / 100
-              }`;
+              document.getElementById("ndviValueDiv").innerHTML =
+                intl.formatNumber((results.processedValue - 100) / 100, {
+                  minimumFractionDigits: 2,
+                  signDisplay: "never",
+                });
             } else {
               // tooltip.hasData = false;
             }
@@ -354,10 +386,10 @@ const layer = new ImageryTileLayer({
                 yAxis: {
                   title: {
                     display: true,
-                    text: "Reflectance",
+                    text: "Digital Number",
                   },
                   min: 4500,
-                  max: 30000,
+                  max: 22000,
                 },
                 x: {
                   title: {
