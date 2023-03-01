@@ -121,13 +121,7 @@
       justify-content: stretch;
     "
   >
-    <div
-      style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      "
-    >
+    <div style="display: flex; flex-direction: column; align-items: center">
       <span
         style="
           font-size: 11px;
@@ -145,6 +139,7 @@
           font-weight: bold;
           color: #309100;
           padding-bottom: 8px;
+          font-variant-numeric: tabular-nums;
         "
       ></span>
     </div>
@@ -312,7 +307,6 @@ const layer = new ImageryTileLayer({
               document.getElementById("ndviValueDiv").innerHTML =
                 intl.formatNumber((results.processedValue - 100) / 100, {
                   minimumFractionDigits: 2,
-                  signDisplay: "never",
                 });
             } else {
               // tooltip.hasData = false;
