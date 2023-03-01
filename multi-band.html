@@ -127,19 +127,14 @@
           "bandTileSelectGroup"
         );
 
-        const group = new GroupLayer({
-          visibilityMode: "exclusive",
-          blendMode: "multiply",
-          effect,
-        });
-
         // https://www.esri.com/arcgis-blog/products/product/imagery/band-combinations-for-landsat-8/
 
-        const layers = [
+        const layerConfigs = [
           {
             bandIds: [0],
             label: "Band 1 Coastal",
-            description: "Wavelength from 0.43 to 0.45 µm"
+            description: "Wavelength from 0.43 to 0.45 µm",
+            visible: true
           },
           {
             bandIds: [1],
@@ -174,7 +169,6 @@
           {
             bandIds: [3, 2, 1],
             label: "Natural color",
-            visible: true,
             description: "Band combination of red (4), green (3), and blue (2)."
           },
           {
@@ -189,15 +183,9 @@
             bandIds: [6, 5, 3],
             label: "Short-wave infrared",
           }
-        ].forEach(({ bandIds, label, description, visible }) => {
-          const layer = new ImageryTileLayer({
-            url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_landsat_8/ImageServer",
-            bandIds,
-            visible: !!visible,
-          });
-
-          group.layers.add(layer);
-
+        ];
+        
+        layerConfigs.forEach(({ bandIds, label, description, visible }) => {
           const tile = document.createElement("calcite-tile-select");
           tile.setAttribute("input-enabled", "true");
           tile.setAttribute("input-alignment", "start");
@@ -209,15 +197,20 @@
           }
           tile.addEventListener(
             "calciteTileSelectChange",
-            () => (layer.visible = true)
+            () => (layer.bandIds = bandIds)
           );
 
           bandTileSelectGroup.appendChild(tile);
         });
 
+        const layer = new ImageryTileLayer({
+          url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Glacier_landsat_8/ImageServer",
+          bandIds: layerConfigs.find(({ visible }) => visible).bandIds
+        });
+
         const map = new Map({
           basemap: "topo-vector", // { portalItem: { id: "2e8a3ccdfd6d42a995b79812b3b0ebc6" }},
-          layers: [group],
+          layers: [layer],
         });
 
         map.basemap.loadAll().then(() => {
@@ -237,8 +230,8 @@
         });
 
 
-        view.whenLayerView(group.layers.at(0)).then(() => {
-          view.goTo(group.layers.at(0).fullExtent.clone().expand(1.1));
+        view.whenLayerView(layer).then(() => {
+          view.goTo(layer.fullExtent.clone().expand(1.1));
         });
 
         view.ui.add("bandTileSelectGroup", "top-right");
