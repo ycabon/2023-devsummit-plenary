@@ -154,11 +154,7 @@
   <calcite-panel id="codeDiv">
     <div style="padding: 12px">
       <calcite-block open>
-        <pre class="codeblock"><code class="language-javascript">const url =
-  "https://tiledimageservices.arcgis.com/
-  V6ZHFr6zdgNZuVG0/arcgis/rest/services/
-  Glacier_national_park_2015/ImageServer";
-
+        <pre class="codeblock"><code class="language-javascript">
 const ndvi = new RasterFunction({
   functionName: "NDVI",
   functionArguments: {
@@ -176,9 +172,7 @@ const colormap = new RasterFunction({
   }
 });
 
-const layer = new ImageryTileLayer({
-  url,
-  rasterFunction: colormap
+layer.rasterFunction = colormap;
 });</code></pre>
         <calcite-fab
           id="runButton"
