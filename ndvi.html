@@ -157,8 +157,8 @@
         <pre class="codeblock"><code class="language-javascript">const ndvi = new RasterFunction({
   functionName: "NDVI",
   functionArguments: {
-    visibleBandID: 3,
-    infraredBandID: 4,
+    visibleBandID: 3,  // Red band id
+    infraredBandID: 4, // NIR band id
     scientificOutput: false
   }
 });
@@ -236,7 +236,7 @@ layer.rasterFunction = colormap;
 
         const layer = new ImageryTileLayer({
           url,
-          bandIds: [3, 2, 1],
+          // bandIds: [3, 2, 1],
           // rasterFunction: colormap,
         });
 
