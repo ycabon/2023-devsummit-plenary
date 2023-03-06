@@ -231,7 +231,7 @@
 
 
         view.whenLayerView(layer).then(() => {
-          view.goTo(layer.fullExtent.clone().expand(1.1));
+          view.goTo(layer.fullExtent.clone().expand(1.5).offset(10000, 0));
         });
 
         view.ui.add("bandTileSelectGroup", "top-right");
