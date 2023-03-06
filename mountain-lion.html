@@ -158,10 +158,10 @@
                 <calcite-slider
                   id="terrainRugnessSlider"
                   label-handles="true"
-                  min-value="30"
-                  max-value="110"
+                  min-value="0"
+                  max-value="30"
                   min="0"
-                  max="300"
+                  max="100"
                 ></calcite-slider>
               </calcite-tile-select>
               <calcite-tile-select
@@ -173,7 +173,11 @@
                 data-layerId="habitatAnalysis"
                 style="margin-left: 20px"
               >
-              <calcite-fab icon="question-mark" style="right: 12px; bottom: 12px; position: absolute" onclick="displayAnalysisImage()"></calcite-fab>
+                <calcite-fab
+                  icon="question-mark"
+                  style="right: 12px; bottom: 12px; position: absolute"
+                  onclick="displayAnalysisImage()"
+                ></calcite-fab>
               </calcite-tile-select>
             </calcite-tile-select-group>
           </div>
@@ -182,10 +186,15 @@
     </calcite-shell>
 
     <calcite-modal aria-labelledby="modal-title" id="modal" width="l">
-      <div slot="content" style="display: flex; justify-content: center;">
-        <img src="./analysis.png">
+      <div slot="content" style="display: flex; justify-content: center">
+        <img src="./analysis.png" />
       </div>
     </calcite-modal>
+
+    <!-- <div id="indicator" class="esri-widget">
+      <span></span>
+      <span></span>
+    </div> -->
   </body>
 
   <script>
@@ -458,7 +467,7 @@
           url: "https://tiledimageservices.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/mountain_lion/ImageServer",
           rasterFunction: createColormapFunction(
             createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
-            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           ),
           visible: false,
         });
@@ -546,7 +555,7 @@
           ];
           habitatAnalysisLayer.rasterFunction = createColormapFunction(
             createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
-            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           );
         });
 
@@ -557,7 +566,7 @@
           ];
           habitatAnalysisLayer.rasterFunction = createColormapFunction(
             createHabitatAnalysisFunction(roadThresholds, rugnessThresholds),
-            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2, 3])
+            enablePixelValuesFromColormap(SUITABILITY_COLORMAP, [1, 2])
           );
         });
 
@@ -568,6 +577,42 @@
         //   .then((layerView) => setupHoverTooltip(layerView));
 
         let tooltip, graphic;
+
+        view
+          .whenLayerView(habitatAnalysisLayer)
+          .then((layerView) => setupIndicator(layerView));
+
+        function setupIndicator(layerView) {
+          // const indicator = document.getElementById("indicator");
+          // view.ui.add(indicator, "top-right");
+
+          reactiveUtils.when(
+            () => !layerView.updating,
+            async () => {
+              const {
+                pixelBlock: {
+                  pixels: [values],
+                  width,
+                },
+                extent: { width: extentWidth },
+              } = await layerView.layer.fetchPixels(
+                view.extent,
+                view.width,
+                view.height
+              );
+              const resolution = extentWidth / width;
+              const statistics = [0, 0, 0, 0, 0, 0, 0, 0];
+              for (const value of values) {
+                statistics[value]++;
+              }
+              const surfaces = statistics.map((value) => value * resolution);
+              const suitableTotalSurface = surfaces[1] + surfaces[2];
+              console.log(intl.formatNumber(suitableTotalSurface / 1_000_000))
+
+              
+            }
+          );
+        }
 
         function setupHoverTooltip(layerView) {
           tooltip = createTooltip();
@@ -754,10 +799,10 @@
         }
       })());
 
-      function displayAnalysisImage() {
-        const modal = document.getElementById("modal");
-        modal.open = true;
-      }
+    function displayAnalysisImage() {
+      const modal = document.getElementById("modal");
+      modal.open = true;
+    }
   </script>
 </html>
 

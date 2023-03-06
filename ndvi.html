@@ -364,7 +364,7 @@ layer.rasterFunction = colormap;
               datasets: [
                 {
                   borderColor: "rgb(75, 192, 192)",
-                  tension: 0.2,
+                  tension: 0.1,
                 },
               ],
             },
@@ -383,6 +383,31 @@ layer.rasterFunction = colormap;
                     display: true,
                     text: "Band Ids - wavelength (micrometer)",
                   },
+                  grid: {
+                    color(context) {
+                      switch(context.tick.value) {
+                        case 3:
+                        case 4:
+                          return "rgb(255, 99, 132)";
+                        default:
+                          return Chart.defaults.borderColor
+                      }
+                    }
+                  },
+                  ticks: {
+                    font(context) {
+                      switch(context.tick.value) {
+                        case 3:
+                        case 4:
+                          return {
+                            size: 14,
+                            weight: "bolder"
+                          };
+                        default:
+                          return Chart.defaults.font
+                      }
+                    }
+                  }
                 },
               },
               plugins: {
