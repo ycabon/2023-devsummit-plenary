@@ -7,7 +7,9 @@ The following demos were presented at the Esri DevSummit 2023 to showcase new cl
 - [Mountain Lion](https://2023-devsummit-plenary.netlify.app/mountain-lion.html)
 - Scraped ~[Elevation](https://2023-devsummit-plenary.netlify.app/elevation.html)~
 
-![image](https://user-images.githubusercontent.com/1074239/228088048-3ceccb21-eb79-43f0-8f4a-c628dd5318d6.png)
+Watch on [mediaspace.esri.com](https://mediaspace.esri.com/media/t/1_nljpgowo?st=384&ed=648)
+
+[![image](https://user-images.githubusercontent.com/1074239/228088048-3ceccb21-eb79-43f0-8f4a-c628dd5318d6.png)](https://mediaspace.esri.com/media/t/1_nljpgowo?st=384&ed=648)
 
 ## Script
 
@@ -15,6 +17,8 @@ The ImageryTileLayer from the JavaScript Maps SDK fetches, processes, and render
 Let me show you how it works and some of its features.
 
 ### [Demo 1](https://2023-devsummit-plenary.netlify.app/multi-band.html)
+
+[![image](https://user-images.githubusercontent.com/1074239/228088469-d46a275b-203c-4511-bf31-2c0db1331194.png)](https://2023-devsummit-plenary.netlify.app/multi-band.html)
 
 _Open developer tools > Network tab_
 
@@ -31,6 +35,8 @@ It’s the layer that extracts and processes the values on the client, by conver
 Now what if we could define that pixel processing…
 
 ### [Demo 2](https://2023-devsummit-plenary.netlify.app/ndvi.html)
+
+[![image](https://user-images.githubusercontent.com/1074239/228088548-c24068b5-f795-45ca-873f-e3c7869f8ca7.png)](https://2023-devsummit-plenary.netlify.app/ndvi.html)
 
 Well, we just released in beta: client-side Raster Functions.
 
@@ -53,6 +59,8 @@ Immediately we can spot greener pixels. And using the identify method of the lay
 On greener pixels we can clearly see the difference between the red and near infrared bands.
 
 ### [Demo 3](https://2023-devsummit-plenary.netlify.app/mountain-lion.html)
+
+[![image](https://user-images.githubusercontent.com/1074239/228088668-f5043584-69af-4a96-9945-827cf3148b7c.png)](https://2023-devsummit-plenary.netlify.app/mountain-lion.html)
 
 Finally, we can create more advanced processing like this suitability analysis to evaluate the habitat of mountain lions.
 
